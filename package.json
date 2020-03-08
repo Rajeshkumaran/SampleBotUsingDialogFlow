@@ -1,0 +1,37 @@
+{
+  "name": "expensetrackerbackend",
+  "version": "1.0.0",
+  "description": "To learn back end technologies like graphql,mongo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon --exec babel-node index.js"
+  },
+  "author": "rajeshkumaran",
+  "license": "ISC",
+  "dependencies": {
+    "babel-node": "0.0.1-security",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-node6": "^11.0.0",
+    "babel-preset-stage-2": "^6.24.1",
+    "babel-register": "^6.26.0",
+    "bodybuilder": "^2.2.6",
+    "bunyan": "^1.8.12",
+    "camelcase": "^4.1.0",
+    "colors": "^1.1.2",
+    "dialogflow": "^1.2.0",
+    "dialogflow-fulfillment": "^0.6.1",
+    "elasticsearch": "^13.3.1",
+    "express": "^4.16.2",
+    "mongodb": "^3.3.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.8.7",
+    "@babel/preset-env": "^7.8.7",
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^8.0.6",
+    "babel-preset-env": "^1.7.0",
+    "nodemon": "^1.12.1"
+  }
+}
