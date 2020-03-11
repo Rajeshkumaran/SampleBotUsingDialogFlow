@@ -57,6 +57,7 @@ export const constructTextResponse = textResponse => {
   return response;
 };
 export const constructCardResponse = cards => {
+  console.log('cards ==> ' + cards);
   let newCards = [];
   cards.map(eachCard => {
     return newCards.push({
