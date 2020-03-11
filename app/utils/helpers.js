@@ -17,7 +17,7 @@ function getAllProducts() {
       throw error;
     }
     console.log('DB Results ==> ' + JSON.stringify(results.rows));
-    return JSON.stringify(results.rows);
+    return constructCardResponse(JSON.stringify(results.rows));
   })
 }
 
@@ -115,8 +115,8 @@ export const constructProductCatalog = () => {
         'Oats (Avena sativa) are a cereal commonly eaten in the form of oatmeal or rolled oats. According to some research, they may have a range of potential health benefits.',
     },
   ];
-  const allProducts = getAllProducts();
-  return constructCardResponse(allProducts);
+  
+  return getAllProducts();
 };
 export const productsBasedOnCategory = category => {
   const products = {
