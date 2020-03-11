@@ -1,6 +1,6 @@
 import { VIEW_PRODUCT, SHOW_PRODUCT_CATALOG_INTENT } from './constants';
 
-export const Pool = require('pg').Pool
+export const Pool = require('pg').Pool;
 export const pool = new Pool({
   user: 'ggpmgzoswemare',
   host: 'ec2-34-206-252-187.compute-1.amazonaws.com',
@@ -9,19 +9,44 @@ export const pool = new Pool({
   port: 5432,
 });
 
-
-
-function getAllProducts() {
-  return pool.query('SELECT * FROM categories ORDER BY name', (error, results) => {
-    if (error) {
-      throw error;
-    }
-    console.log('DB Results ==> ' + JSON.stringify(results.rows));
-    var jsonResult = JSON.stringify(results.rows);
-    return constructCardResponse(JSON.parse(jsonResult));
-  });
+async function getAllProducts() {
+  const mockProducts = [
+    {
+      buttonText: 'View more on chocolate',
+      productCategory: 'Chocolate Products',
+      categoryImage:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQZfUFpW1oTHXalXj7cks0VGsyWVonX9pIeldn5G7ygQUVNNwxp',
+      description:
+        'A chocolate bar or candy bar is a confection in an oblong or rectangular form containing chocolate, which may also contain layerings or mixtures that include nuts, fruit, caramel, nougat, and wafers.',
+    },
+    {
+      buttonText: 'View more on cooking',
+      productCategory: 'Cooking Products',
+      categoryImage:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTxDv2g8U3W0H6om3lODWn40v7xxdp7BXaflartzlMjTAh5cTGd',
+      description:
+        'Dried Fruits, Nuts & Seeds. Nuts & Seeds. Dried Fruits. Coffee, Tea & Beverages. Tea. Coffee & Espresso. Rice, Flour & Pulses. Flours. Cooking & Baking Supplies. Spices & Masalas. Ready To Eat & Cook. Instant Snacks & Breakfast Mixes. Snack Foods. Biscuits & Cookies. Cereal & Muesli. Oats & Porridge. Sweets, Chocolate ..',
+    },
+    {
+      buttonText: 'View more on nuts',
+      productCategory: 'Nut Products',
+      categoryImage:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQjqbVnQfqqdxfFTXyP8DUmVQzrBKWxX8MpdR9Mj0M2duMg8ifh',
+      description:
+        'Oats (Avena sativa) are a cereal commonly eaten in the form of oatmeal or rolled oats. According to some research, they may have a range of potential health benefits.',
+    },
+  ];
+  return new Promise((resolve, reject) =>
+    pool.query('SELECT * FROM categories ORDER BY name', (error, results) => {
+      if (error) {
+        throw error;
+      }
+      console.log('DB Results ==> ' + JSON.stringify(results.rows));
+      var jsonResult = JSON.stringify(results.rows);
+      resolve(constructCardResponse(JSON.parse(jsonResult)));
+    }),
+  );
 }
-
 
 export const constructTextResponse = textResponse => {
   const response = {
@@ -89,36 +114,12 @@ function constructCardResponse(cards) {
   };
   return response;
 }
-export const constructProductCatalog = () => {
+export const constructProductCatalog = async () => {
   console.log('session ---> ', sessionId);
-  const mockProducts = [
-    {
-      buttonText: 'View more on chocolate',
-      productCategory: 'Chocolate Products',
-      categoryImage:
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQZfUFpW1oTHXalXj7cks0VGsyWVonX9pIeldn5G7ygQUVNNwxp',
-      description:
-        'A chocolate bar or candy bar is a confection in an oblong or rectangular form containing chocolate, which may also contain layerings or mixtures that include nuts, fruit, caramel, nougat, and wafers.',
-    },
-    {
-      buttonText: 'View more on cooking',
-      productCategory: 'Cooking Products',
-      categoryImage:
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTxDv2g8U3W0H6om3lODWn40v7xxdp7BXaflartzlMjTAh5cTGd',
-      description:
-        'Dried Fruits, Nuts & Seeds. Nuts & Seeds. Dried Fruits. Coffee, Tea & Beverages. Tea. Coffee & Espresso. Rice, Flour & Pulses. Flours. Cooking & Baking Supplies. Spices & Masalas. Ready To Eat & Cook. Instant Snacks & Breakfast Mixes. Snack Foods. Biscuits & Cookies. Cereal & Muesli. Oats & Porridge. Sweets, Chocolate ..',
-    },
-    {
-      buttonText: 'View more on nuts',
-      productCategory: 'Nut Products',
-      categoryImage:
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQjqbVnQfqqdxfFTXyP8DUmVQzrBKWxX8MpdR9Mj0M2duMg8ifh',
-      description:
-        'Oats (Avena sativa) are a cereal commonly eaten in the form of oatmeal or rolled oats. According to some research, they may have a range of potential health benefits.',
-    },
-  ];
-  
-  return getAllProducts();
+
+  let products = await getAllProducts();
+  console.log('products ----> ', products);
+  return products;
 };
 export const productsBasedOnCategory = category => {
   const products = {
@@ -176,12 +177,12 @@ export const productsBasedOnCategory = category => {
 
   return constructCardResponse(products[category]);
 };
-export const resolveIntent = ({ intentName = '', params = {} }) => {
+export const resolveIntent = async ({ intentName = '', params = {} }) => {
   let responseObject = {};
 
   switch (intentName) {
     case SHOW_PRODUCT_CATALOG_INTENT: {
-      responseObject = constructProductCatalog();
+      responseObject = await constructProductCatalog();
       break;
     }
     case VIEW_PRODUCT: {

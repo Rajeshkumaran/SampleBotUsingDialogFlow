@@ -8,14 +8,14 @@ app.use(bodyParser.json({ limit: '256kb' })); // parse application/json
 
 app.get('/', (req, res) => res.send('Hello'));
 global.sessionId = '';
-app.post('/fulfillmentResolver', (req, res) => {
+app.post('/fulfillmentResolver', async (req, res) => {
   console.log('url ', req.url, JSON.stringify(req.body));
   sessionId = req.body.session;
   let responseObject = {};
   const queryResult = req.body.queryResult;
   const intentName = queryResult.intent.displayName;
   const params = queryResult.parameters;
-  responseObject = resolveIntent({ intentName, params });
+  responseObject = await resolveIntent({ intentName, params: '' });
   console.log('responseObject -> to send : ', responseObject);
   res.send(responseObject);
 });
