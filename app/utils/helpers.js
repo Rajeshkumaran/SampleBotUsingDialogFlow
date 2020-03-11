@@ -17,7 +17,7 @@ function getAllProducts() {
       throw error;
     }
     console.log('DB Results ==> ' + JSON.stringify(results.rows));
-    return constructCardResponse(JSON.stringify(results.rows));
+    return constructCardResponse(JSON.parse(results.rows));
   })
 }
 
