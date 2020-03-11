@@ -12,12 +12,13 @@ export const pool = new Pool({
 
 
 function getAllProducts() {
-  pool.query('SELECT * FROM categories ORDER BY name', (error, results) => {
+  return pool.query('SELECT * FROM categories ORDER BY name', (error, results) => {
     if (error) {
       throw error;
     }
     console.log('DB Results ==> ' + JSON.stringify(results.rows));
-    return results.rows;
+    var jsonResult = JSON.stringify(results.rows);
+    return constructCardResponse(JSON.parse(jsonResult));
   });
 }
 
@@ -117,8 +118,7 @@ export const constructProductCatalog = () => {
     },
   ];
   
-  return getAllProducts().then(data =>  
-    constructCardResponse(data));
+  return getAllProducts();
 };
 export const productsBasedOnCategory = category => {
   const products = {
