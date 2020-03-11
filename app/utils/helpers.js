@@ -17,8 +17,7 @@ function getAllProducts() {
       throw error;
     }
     console.log('DB Results ==> ' + JSON.stringify(results.rows));
-    var jsonResult = JSON.stringify(results.rows);
-    return constructCardResponse(JSON.parse(jsonResult));
+    return results.rows;
   });
 }
 
@@ -118,7 +117,8 @@ export const constructProductCatalog = () => {
     },
   ];
   
-  return getAllProducts();
+  return getAllProducts().then(data =>  
+    constructCardResponse(data));
 };
 export const productsBasedOnCategory = category => {
   const products = {
