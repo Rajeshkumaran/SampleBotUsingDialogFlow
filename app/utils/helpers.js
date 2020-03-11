@@ -15,7 +15,7 @@ const getAllProducts = () => {
       throw error
     }
     console.log('DB Results ==> ' + results.rows);
-    return results.rows
+    return JSON.stringify(results.rows)
   })
 }
 
