@@ -1,7 +1,7 @@
 import { VIEW_PRODUCT, SHOW_PRODUCT_CATALOG_INTENT } from './constants';
 
-const Pool = require('pg').Pool
-const pool = new Pool({
+export const Pool = require('pg').Pool
+export const pool = new Pool({
   user: 'ggpmgzoswemare',
   host: 'ec2-34-206-252-187.compute-1.amazonaws.com',
   database: 'd94f7otd3e40nn',
@@ -9,13 +9,15 @@ const pool = new Pool({
   port: 5432,
 });
 
-const getAllProducts = () => {
-  pool.query('SELECT * FROM categories ORDER BY name', (error, results) => {
+
+
+export function getAllProducts() {
+  return pool.query('SELECT * FROM categories ORDER BY name', (error, results) => {
     if (error) {
-      throw error
+      throw error;
     }
     console.log('DB Results ==> ' + JSON.stringify(results.rows));
-    return JSON.stringify(results.rows)
+    return JSON.stringify(results.rows);
   })
 }
 
