@@ -1,4 +1,25 @@
 import { VIEW_PRODUCT, SHOW_PRODUCT_CATALOG_INTENT } from './constants';
+
+const Pool = require('pg').Pool
+const pool = new Pool({
+  user: 'ggpmgzoswemare',
+  host: 'ec2-34-206-252-187.compute-1.amazonaws.com',
+  database: 'd94f7otd3e40nn',
+  password: 'c08b7cd425e121261d35a05471cd71a0664b5e8fc45596a9b12d0814d7b12bb2',
+  port: 5432,
+});
+
+const getAllProducts = () => {
+  pool.query('SELECT * FROM categories ORDER BY name', (error, results) => {
+    if (error) {
+      throw error
+    }
+    console.log('DB Results ==> ' + results.rows);
+    return results.rows
+  })
+}
+
+
 export const constructTextResponse = textResponse => {
   const response = {
     fulfillmentText: 'displayed&spoken response',
@@ -91,7 +112,7 @@ export const constructProductCatalog = () => {
         'Oats (Avena sativa) are a cereal commonly eaten in the form of oatmeal or rolled oats. According to some research, they may have a range of potential health benefits.',
     },
   ];
-  return constructCardResponse(mockProducts);
+  return constructCardResponse(getAllProducts());
 };
 export const productsBasedOnCategory = category => {
   const products = {

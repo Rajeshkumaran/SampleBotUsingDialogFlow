@@ -1,0 +1,1 @@
+INSERT INTO categories VALUES(3, 'Nuts & Seeds', 'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQjqbVnQfqqdxfFTXyP8DUmVQzrBKWxX8MpdR9Mj0M2duMg8ifh');
