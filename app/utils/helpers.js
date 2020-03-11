@@ -12,14 +12,14 @@ export const pool = new Pool({
 
 
 function getAllProducts() {
-  return pool.query('SELECT * FROM categories ORDER BY name', (error, results) => {
+  pool.query('SELECT * FROM categories ORDER BY name', (error, results) => {
     if (error) {
       throw error;
     }
     console.log('DB Results ==> ' + JSON.stringify(results.rows));
     var jsonResult = JSON.stringify(results.rows);
     return constructCardResponse(JSON.parse(jsonResult));
-  })
+  });
 }
 
 
@@ -61,6 +61,7 @@ function constructCardResponse(cards) {
   console.log('cards ==> ' + cards);
   let newCards = [];
   cards.map(eachCard => {
+    console.log('name==>' + eachCard.name);
     return newCards.push({
       card: {
         title: eachCard.name,
