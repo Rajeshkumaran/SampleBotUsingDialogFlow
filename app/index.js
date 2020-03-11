@@ -1,1 +1,2 @@
-require("./server.js");
+require('babel-polyfill');
+require('./server.js');
