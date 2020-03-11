@@ -83,14 +83,13 @@ export const constructTextResponse = textResponse => {
   return response;
 };
 function constructCardResponse(cards) {
-  console.log('cards ==> ' + cards);
+  console.log('cards ==> ', JSON.stringify(cards));
   let newCards = [];
   cards.map(eachCard => {
     console.log('name==>' + eachCard.name);
     return newCards.push({
       card: {
         title: eachCard.name,
-        subtitle: '',
         imageUri: eachCard.image_url,
         buttons: [
           {
@@ -118,7 +117,7 @@ export const constructProductCatalog = async () => {
   console.log('session ---> ', sessionId);
 
   let products = await getAllProducts();
-  console.log('products ----> ', products);
+  console.log('products ----> ', JSON.stringify(products));
   return products;
 };
 export const productsBasedOnCategory = category => {
