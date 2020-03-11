@@ -11,7 +11,7 @@ export const pool = new Pool({
 
 
 
-export function getAllProducts() {
+function getAllProducts() {
   return pool.query('SELECT * FROM categories ORDER BY name', (error, results) => {
     if (error) {
       throw error;
@@ -56,7 +56,7 @@ export const constructTextResponse = textResponse => {
   };
   return response;
 };
-export const constructCardResponse = cards => {
+function constructCardResponse(cards) {
   console.log('cards ==> ' + cards);
   let newCards = [];
   cards.map(eachCard => {
@@ -86,7 +86,7 @@ export const constructCardResponse = cards => {
     // ],
   };
   return response;
-};
+}
 export const constructProductCatalog = () => {
   console.log('session ---> ', sessionId);
   const mockProducts = [
@@ -115,7 +115,7 @@ export const constructProductCatalog = () => {
         'Oats (Avena sativa) are a cereal commonly eaten in the form of oatmeal or rolled oats. According to some research, they may have a range of potential health benefits.',
     },
   ];
-  var allProducts = getAllProducts();
+  const allProducts = getAllProducts();
   return constructCardResponse(allProducts);
 };
 export const productsBasedOnCategory = category => {
