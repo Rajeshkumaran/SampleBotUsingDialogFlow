@@ -176,7 +176,15 @@ export const productsBasedOnCategory = category => {
 
   return constructCardResponse(products[category]);
 };
-export const resolveIntent = async ({ intentName = '', params = {} }) => {
+export const get = (from, selector, defaultVal) => {
+  const value = selector
+    .replace(/\[([^[\]]*)\]/g, '.$1.')
+    .split('.')
+    .filter(t => t !== '')
+    .reduce((prev, cur) => prev && prev[cur], from);
+  return value === undefined || value === null ? defaultVal : value;
+};
+export const resolveIntent = async ({ intentName = '', parameters = {} }) => {
   let responseObject = {};
 
   switch (intentName) {
@@ -185,8 +193,7 @@ export const resolveIntent = async ({ intentName = '', params = {} }) => {
       break;
     }
     case VIEW_PRODUCT: {
-      const { category_types = 'Nuts' } = params;
-      console.log('category_type', category_types, params);
+      const { category_types = 'Nuts' } = parameters;
       responseObject = productsBasedOnCategory(category_types);
       break;
     }
