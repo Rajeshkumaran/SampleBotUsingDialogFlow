@@ -206,7 +206,8 @@ export const getUserDetails = async (req) => {
       // TODO : need to insert user data into db
     }
     return userContext;
-  };
+  }
+};
 
   export const resolveIntent = async ({ intentName = '', parameters = {} }) => {
     let responseObject = {};
