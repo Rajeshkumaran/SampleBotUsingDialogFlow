@@ -226,5 +226,4 @@ export const getUserDetails = async (req) => {
         responseObject = constructTextResponse('Pardon come again');
     }
     return responseObject;
-  }
-};
+  };
