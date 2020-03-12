@@ -184,21 +184,46 @@ export const get = (from, selector, defaultVal) => {
     .reduce((prev, cur) => prev && prev[cur], from);
   return value === undefined || value === null ? defaultVal : value;
 };
-export const resolveIntent = async ({ intentName = '', parameters = {} }) => {
-  let responseObject = {};
 
-  switch (intentName) {
-    case SHOW_PRODUCT_CATALOG_INTENT: {
-      responseObject = await constructProductCatalog();
-      break;
+export const getUserDetails = async (req) => {
+  let userContext = {};
+  let senderInfo = get(req, 'body.originalDetectIntentRequest', '');
+  if (senderInfo) {
+    const senderId = get(senderInfo, 'payload.data.sender.id');
+    // TODO fetch user data from db before inserting into it
+    if (senderId) {
+      // if senderId is available fetch user data from fb graph api
+      const url = USER_PROFILE_GRAPH_API_FB_ENDPOINT.replace(
+        'SENDER_ID',
+        senderId,
+      ).replace('PAGE_ACCESS_TOKEN', PAGE_ACCESS_TOKEN);
+      const response = await requestWrapper({
+        method: 'get',
+        url,
+      });
+      userContext = responseParser(response);
+      console.log('user data', data);
+      // TODO : need to insert user data into db
     }
-    case VIEW_PRODUCT: {
-      const { category_types = 'Nuts' } = parameters;
-      responseObject = productsBasedOnCategory(category_types);
-      break;
+    return userContext;
+  };
+
+  export const resolveIntent = async ({ intentName = '', parameters = {} }) => {
+    let responseObject = {};
+
+    switch (intentName) {
+      case SHOW_PRODUCT_CATALOG_INTENT: {
+        responseObject = await constructProductCatalog();
+        break;
+      }
+      case VIEW_PRODUCT: {
+        const { category_types = 'Nuts' } = parameters;
+        responseObject = productsBasedOnCategory(category_types);
+        break;
+      }
+      default:
+        responseObject = constructTextResponse('Pardon come again');
     }
-    default:
-      responseObject = constructTextResponse('Pardon come again');
+    return responseObject;
   }
-  return responseObject;
 };
