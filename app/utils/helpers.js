@@ -10,32 +10,33 @@ export const pool = new Pool({
 });
 
 async function getAllProducts() {
-  const mockProducts = [
-    {
-      buttonText: 'View more on chocolate',
-      productCategory: 'Chocolate Products',
-      categoryImage:
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQZfUFpW1oTHXalXj7cks0VGsyWVonX9pIeldn5G7ygQUVNNwxp',
-      description:
-        'A chocolate bar or candy bar is a confection in an oblong or rectangular form containing chocolate, which may also contain layerings or mixtures that include nuts, fruit, caramel, nougat, and wafers.',
-    },
-    {
-      buttonText: 'View more on cooking',
-      productCategory: 'Cooking Products',
-      categoryImage:
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTxDv2g8U3W0H6om3lODWn40v7xxdp7BXaflartzlMjTAh5cTGd',
-      description:
-        'Dried Fruits, Nuts & Seeds. Nuts & Seeds. Dried Fruits. Coffee, Tea & Beverages. Tea. Coffee & Espresso. Rice, Flour & Pulses. Flours. Cooking & Baking Supplies. Spices & Masalas. Ready To Eat & Cook. Instant Snacks & Breakfast Mixes. Snack Foods. Biscuits & Cookies. Cereal & Muesli. Oats & Porridge. Sweets, Chocolate ..',
-    },
-    {
-      buttonText: 'View more on nuts',
-      productCategory: 'Nut Products',
-      categoryImage:
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQjqbVnQfqqdxfFTXyP8DUmVQzrBKWxX8MpdR9Mj0M2duMg8ifh',
-      description:
-        'Oats (Avena sativa) are a cereal commonly eaten in the form of oatmeal or rolled oats. According to some research, they may have a range of potential health benefits.',
-    },
-  ];
+  // const mockProducts = [
+  //   {
+  //     buttonText: 'View more on chocolate',
+  //     name: 'Chocolate Products',
+  //     image_url:
+  //       'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQZfUFpW1oTHXalXj7cks0VGsyWVonX9pIeldn5G7ygQUVNNwxp',
+  //     description:
+  //       'A chocolate bar or candy bar is a confection in an oblong or rectangular form containing chocolate, which may also contain layerings or mixtures that include nuts, fruit, caramel, nougat, and wafers.',
+  //   },
+  //   {
+  //     buttonText: 'View more on cooking',
+  //     name: 'Cooking Products',
+  //     image_url:
+  //       'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTxDv2g8U3W0H6om3lODWn40v7xxdp7BXaflartzlMjTAh5cTGd',
+  //     description:
+  //       'Dried Fruits, Nuts & Seeds. Nuts & Seeds. Dried Fruits. Coffee, Tea & Beverages. Tea. Coffee & Espresso. Rice, Flour & Pulses. Flours. Cooking & Baking Supplies. Spices & Masalas. Ready To Eat & Cook. Instant Snacks & Breakfast Mixes. Snack Foods. Biscuits & Cookies. Cereal & Muesli. Oats & Porridge. Sweets, Chocolate ..',
+  //   },
+  //   {
+  //     buttonText: 'View more on nuts',
+  //     name: 'Nut Products',
+  //     image_url:
+  //       'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQjqbVnQfqqdxfFTXyP8DUmVQzrBKWxX8MpdR9Mj0M2duMg8ifh',
+  //     description:
+  //       'Oats (Avena sativa) are a cereal commonly eaten in the form of oatmeal or rolled oats. According to some research, they may have a range of potential health benefits.',
+  //   },
+  // ];
+  // return constructCardResponse(mockProducts);
   return new Promise((resolve, reject) =>
     pool.query('SELECT * FROM categories ORDER BY name', (error, results) => {
       if (error) {
@@ -83,24 +84,40 @@ export const constructTextResponse = textResponse => {
   return response;
 };
 function constructCardResponse(cards) {
-  console.log('cards ==> ', JSON.stringify(cards));
   let newCards = [];
   cards.map(eachCard => {
-    console.log('name==>' + eachCard.name);
     return newCards.push({
-      card: {
-        title: eachCard.name,
-        imageUri: eachCard.image_url,
-        buttons: [
-          {
-            text: 'View More',
-          },
-        ],
-      },
+      title: eachCard.name,
+      image_url: eachCard.image_url,
+      ...(eachCard.subtitle && { subtitle: eachCard.subtitle }),
+      ...(eachCard.showCustomButtons
+        ? {
+            buttons: eachCard.buttons,
+          }
+        : {
+            buttons: [
+              {
+                type: 'postback',
+                payload: `View more on ${eachCard.name}`,
+                title: 'View More',
+              },
+            ],
+          }),
     });
   });
   const response = {
-    fulfillmentMessages: newCards,
+    payload: {
+      facebook: {
+        attachment: {
+          type: 'template',
+          payload: {
+            template_type: 'generic',
+            elements: newCards,
+          },
+        },
+      },
+    },
+
     // outputContexts: [
     //   {
     //     name: `${sessionId}/contexts/awaiting_category_selection`,
@@ -124,52 +141,142 @@ export const productsBasedOnCategory = category => {
   const products = {
     Chocolate: [
       {
-        productCategory: 'Dark chocolate',
-        description: 'Rs.200/kg',
-        categoryImage:
+        showCustomButtons: true,
+        name: 'Dark chocolate',
+        subtitle: 'Rs.200/kg',
+        image_url:
           'https://www.lakechamplainchocolates.com/media/catalog/product/cache/05ca0152a64ac00c4063b513bbd4a7c7/d/a/dark-chocolate-caramels_7.jpg',
+        buttons: [
+          {
+            type: 'postback',
+            payload: 'Add Dark Chocolate to cart',
+            title: 'Add to cart',
+          },
+          {
+            type: 'postback',
+            payload: 'Select Quantity for Dark Chocolate',
+            title: 'Select Quantity',
+          },
+        ],
       },
       {
-        productCategory: 'White chocolate',
-        description: 'Rs.150/kg',
-        categoryImage:
+        showCustomButtons: true,
+        name: 'White chocolate',
+        subtitle: 'Rs.150/kg',
+        image_url:
           'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTWHeUTG-v_iKg9xrC3tBem4x0V0BfIh69kxSxJFFyFV0pwmobO',
+        buttons: [
+          {
+            type: 'postback',
+            payload: 'Add White Chocolate to cart',
+            title: 'Add to cart',
+          },
+          {
+            type: 'postback',
+            payload: 'Select Quantity for White Chocolate',
+            title: 'Select Quantity',
+          },
+        ],
       },
     ],
 
-    Nut: [
+    Nuts: [
       {
-        productCategory: 'Badam',
-        description: 'Rs.700/kg',
-        categoryImage:
+        showCustomButtons: true,
+        name: 'Badam',
+        subtitle: 'Rs.700/kg',
+        image_url:
           'https://statics.sportskeeda.com/editor/2018/07/15e03-1531709674-800.jpg',
+        buttons: [
+          {
+            type: 'postback',
+            payload: 'Add Nuts to cart',
+            title: 'Add to cart',
+          },
+          {
+            type: 'postback',
+            payload: 'Select Quantity for Nuts',
+            title: 'Select Quantity',
+          },
+        ],
       },
       {
-        productCategory: 'Pista',
-        description: 'Rs.350/kg',
-        categoryImage:
+        showCustomButtons: true,
+        name: 'Pista',
+        subtitle: 'Rs.350/kg',
+        image_url:
           'https://images-na.ssl-images-amazon.com/images/I/91h8Y4yEYOL._SL1500_.jpg',
+        buttons: [
+          {
+            type: 'postback',
+            payload: 'Add Pista to cart',
+            title: 'Add to cart',
+          },
+          {
+            type: 'postback',
+            payload: 'Select Quantity for Pista',
+            title: 'Select Quantity',
+          },
+        ],
       },
     ],
 
     Cooking: [
       {
-        productCategory: 'Aachi sambar powder',
-        description: 'Rs.20/piece',
-        categoryImage:
+        showCustomButtons: true,
+        name: 'Aachi sambar powder',
+        subtitle: 'Rs.20/piece',
+        image_url:
           'https://5.imimg.com/data5/MK/WB/MY-13576389/aachi-sambar-powder-500x500.png',
+        buttons: [
+          {
+            type: 'postback',
+            payload: 'Add Aachi Sambar powder to cart',
+            title: 'Add to cart',
+          },
+          {
+            type: 'postback',
+            payload: 'Select Quantity for Aachi Sambar powder',
+            title: 'Select Quantity',
+          },
+        ],
       },
       {
-        productCategory: 'Maggie',
-        description: 'Rs.10/piece',
-        categoryImage:
+        showCustomButtons: true,
+        name: 'Maggie',
+        subtitle: 'Rs.10/piece',
+        image_url:
           'https://www.nestle.in/sites/g/files/pydnoa451/files/styles/brand_image/public/1_newmaggipackshot_inner2017_0.jpg?itok=sBN9ehVa',
+        buttons: [
+          {
+            type: 'postback',
+            payload: 'Add Maggie to cart',
+            title: 'Add to cart',
+          },
+          {
+            type: 'postback',
+            payload: 'Select Quantity for Maggie',
+            title: 'Select Quantity',
+          },
+        ],
       },
       {
-        productCategory: 'Tata Sala',
-        description: 'Rs.10/piece',
-        categoryImage:
-          'https://mynewsfit.com/wp-content/uploads/2019/08/Salt.png',
+        showCustomButtons: true,
+        name: 'Tata Sala',
+        subtitle: 'Rs.10/piece',
+        image_url: 'https://mynewsfit.com/wp-content/uploads/2019/08/Salt.png',
+        buttons: [
+          {
+            type: 'postback',
+            payload: 'Add Tata salt to cart',
+            title: 'Add to cart',
+          },
+          {
+            type: 'postback',
+            payload: 'Select Quantity for Tata salt',
+            title: 'Select Quantity',
+          },
+        ],
       },
     ],
   };
@@ -185,7 +292,7 @@ export const get = (from, selector, defaultVal) => {
   return value === undefined || value === null ? defaultVal : value;
 };
 
-export const getUserDetails = async (req) => {
+export const getUserDetails = async req => {
   let userContext = {};
   let senderInfo = get(req, 'body.originalDetectIntentRequest', '');
   if (senderInfo) {
@@ -209,21 +316,21 @@ export const getUserDetails = async (req) => {
   }
 };
 
-  export const resolveIntent = async ({ intentName = '', parameters = {} }) => {
-    let responseObject = {};
+export const resolveIntent = async ({ intentName = '', parameters = {} }) => {
+  let responseObject = {};
 
-    switch (intentName) {
-      case SHOW_PRODUCT_CATALOG_INTENT: {
-        responseObject = await constructProductCatalog();
-        break;
-      }
-      case VIEW_PRODUCT: {
-        const { category_types = 'Nuts' } = parameters;
-        responseObject = productsBasedOnCategory(category_types);
-        break;
-      }
-      default:
-        responseObject = constructTextResponse('Pardon come again');
+  switch (intentName) {
+    case SHOW_PRODUCT_CATALOG_INTENT: {
+      responseObject = await constructProductCatalog();
+      break;
     }
-    return responseObject;
-  };
+    case VIEW_PRODUCT: {
+      const { category_types = 'Nuts' } = parameters;
+      responseObject = productsBasedOnCategory(category_types);
+      break;
+    }
+    default:
+      responseObject = constructTextResponse('Pardon come again');
+  }
+  return responseObject;
+};
