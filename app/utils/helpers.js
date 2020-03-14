@@ -49,7 +49,7 @@ async function getAllProducts() {
   );
 }
 
-export function addOrUpdateUser(userContext) {
+export async function addOrUpdateUser(userContext) {
  
       const result = await pg.getById('users', userContext.id);
 
