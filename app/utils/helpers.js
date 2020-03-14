@@ -190,12 +190,12 @@ export const productsBasedOnCategory = category => {
         buttons: [
           {
             type: 'postback',
-            payload: 'Add Nuts to cart',
+            payload: 'Add Badam to cart',
             title: 'Add to cart',
           },
           {
             type: 'postback',
-            payload: 'Select Quantity for Nuts',
+            payload: 'Select Quantity for Badam',
             title: 'Select Quantity',
           },
         ],
