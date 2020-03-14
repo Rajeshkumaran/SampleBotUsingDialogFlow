@@ -49,9 +49,8 @@ async function getAllProducts() {
   );
 }
 
-export async function addOrUpdateUser(userContext) {
+export function addOrUpdateUser(userContext) {
  
-  return new Promise((resolve, reject) => {
       const result = await pg.getById('users', userContext.id);
 
       let firstName = get(userContext, 'first_name');
@@ -70,9 +69,8 @@ export async function addOrUpdateUser(userContext) {
         result = pg.insert('users', userObject);
 
       }
-      resolve(JSON.parse(result));
-    });
-}
+      return JSON.parse(result);
+    };
 
 
 export const constructTextResponse = textResponse => {
