@@ -51,7 +51,7 @@ async function getAllProducts() {
 
 export async function addOrUpdateUser(userContext) {
  
-      const result = await pg.getById('users', userContext.id);
+      let result = await pg.getById('users', userContext.id);
 
       let firstName = get(userContext, 'first_name');
       let lastName = get(userContext, 'last_name');
