@@ -1,6 +1,7 @@
 import express from 'express';
 import config from './connectors/config';
-import { resolveIntent, getUserDetails } from './utils/helpers';
+import { getUserDetails } from './utils/helpers';
+import resolveIntent from './intentResolvers';
 var bodyParser = require('body-parser');
 const { port } = config;
 var app = express();
@@ -9,7 +10,14 @@ app.use(bodyParser.json({ limit: '256kb' })); // parse application/json
 app.get('/', (req, res) => {
   let userContext = getUserDetails(req);
   let salutation = userContext.gender === 'male' ? 'Mr. ' : 'Ms. ';
-  res.send('Hello' + salutation + ', ' + userContext.first_name + ' ' + userContext.last_name);
+  res.send(
+    'Hello' +
+      salutation +
+      ', ' +
+      userContext.first_name +
+      ' ' +
+      userContext.last_name,
+  );
 });
 global.sessionId = '';
 
