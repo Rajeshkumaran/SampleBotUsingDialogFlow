@@ -2,13 +2,21 @@ import {
   constructProductCatalog,
   productsBasedOnCategory,
   constructTextResponse,
+  getUserDetails,
 } from '../utils/helpers';
-import { SHOW_PRODUCT_CATALOG_INTENT, VIEW_PRODUCT } from '../utils/constants';
+import { SHOW_PRODUCT_CATALOG_INTENT, VIEW_PRODUCT, WELCOME_MESSAGE } from '../utils/constants';
 
-const resolveIntent = async ({ intentName = '', parameters = {} }) => {
+const resolveIntent = async ({ intentName = '', parameters = {} , request}) => {
   let responseObject = {};
 
   switch (intentName) {
+    case WELCOME_MESSAGE: {
+      console.log('inside welcome message');
+      const userContext = getUserDetails(request)
+      console.log('userContext -=> ' + userContext)
+      responseObject = constructTextResponse('User');
+      break;
+    }
     case SHOW_PRODUCT_CATALOG_INTENT: {
       responseObject = await constructProductCatalog();
       break;

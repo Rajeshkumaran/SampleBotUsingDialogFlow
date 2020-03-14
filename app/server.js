@@ -7,18 +7,8 @@ const { port } = config;
 var app = express();
 app.use(bodyParser.json({ limit: '256kb' })); // parse application/json
 
-app.get('/', (req, res) => {
-  let userContext = getUserDetails(req);
-  let salutation = userContext.gender === 'male' ? 'Mr. ' : 'Ms. ';
-  res.send(
-    'Hello' +
-      salutation +
-      ', ' +
-      userContext.first_name +
-      ' ' +
-      userContext.last_name,
-  );
-});
+app.get('/', (req, res) => res.send('hello'));
+
 global.sessionId = '';
 
 app.post('/fulfillmentResolver', async (req, res) => {
@@ -28,7 +18,7 @@ app.post('/fulfillmentResolver', async (req, res) => {
   const queryResult = req.body.queryResult;
   const intentName = queryResult.intent.displayName;
   const params = queryResult.parameters;
-  responseObject = await resolveIntent({ intentName, params: '' });
+  responseObject = await resolveIntent({ intentName, params: '' , req});
   console.log('responseObject -> to send : ', responseObject);
   res.send(responseObject);
 });
