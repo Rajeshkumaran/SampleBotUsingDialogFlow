@@ -1,5 +1,5 @@
-import { VIEW_PRODUCT, SHOW_PRODUCT_CATALOG_INTENT } from './constants';
-
+import requestWrapper from './requestWrapper';
+import responseParser from './responseParser';
 const PgConnection = require('postgresql-easy');
 export const pg = new PgConnection({
   user: 'ggpmgzoswemare',
@@ -50,9 +50,9 @@ async function getAllProducts() {
 }
 
 export const addOrUpdateUser = userContext => {
-  async() => {
-  try {
-   console.log('userId => ' + userContext.id);
+  async () => {
+    try {
+      console.log('userId => ' + userContext.id);
       let result = await pg.getById('users', userContext.id);
 
       let firstName = get(userContext, 'first_name');
@@ -60,24 +60,27 @@ export const addOrUpdateUser = userContext => {
       let gender = get(userContext, 'gender');
       let userId = get(userContext, 'id');
       let sessionId = get(userContext, 'id');
-      let userObject = {id: userId, first_name: firstName, last_name: lastName, gender: gender, session_id : sessionId};
+      let userObject = {
+        id: userId,
+        first_name: firstName,
+        last_name: lastName,
+        gender: gender,
+        session_id: sessionId,
+      };
 
       if (result) {
         console.log('inside user if==>');
-        result = pg.updateById(
-          'users', userContext.id, userObject);
+        result = pg.updateById('users', userContext.id, userObject);
       } else {
         console.log('inside user else==>');
         result = pg.insert('users', userObject);
-
       }
       return JSON.parse(result);
-    } catch(e) {
-console.log(e);
+    } catch (e) {
+      console.log(e);
     }
-  }
+  };
 };
-
 
 export const constructTextResponse = textResponse => {
   const response = {
@@ -339,7 +342,7 @@ export const getUserDetails = async req => {
         method: 'get',
         url,
       });
-      userContext = responseParserc(response);
+      userContext = responseParser(response);
       console.log('user data', data);
       // TODO : need to insert user data into db
     }
