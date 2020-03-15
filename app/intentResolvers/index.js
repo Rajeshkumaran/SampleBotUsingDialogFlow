@@ -85,6 +85,8 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       if (isItemAdded) {
         responseObject = constructCardResponse([
           {
+            showCustomButtons: true,
+            name: 'ABC Supermarket',
             image_url:
               'https://scontent.fmaa2-1.fna.fbcdn.net/v/t1.0-9/27867265_1784381608241200_4237446729118763549_n.jpg?_nc_cat=104&_nc_sid=85a577&_nc_ohc=7kERmMrFuhEAX-GGKyS&_nc_ht=scontent.fmaa2-1.fna&oh=ca7cf39165f3c687070a017ecee5c507&oe=5E953320',
             buttons: [

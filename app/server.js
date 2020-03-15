@@ -22,7 +22,7 @@ app.post('/fulfillmentResolver', async (req, res) => {
     parameters,
     request: req,
   });
-  console.log('responseObject -> to send : ', responseObject);
+  console.log('responseObject -> to send : ', JSON.stringify(responseObject));
   res.send(responseObject);
 });
 
