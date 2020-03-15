@@ -5,6 +5,8 @@ import {
   getUserDetails,
   addOrUpdateUser,
   constructCardResponse,
+  addToCart,
+  getUserIdFromRequest,
 } from '../utils/helpers';
 import {
   SHOW_PRODUCT_CATALOG_INTENT,
@@ -15,6 +17,7 @@ import {
 
 const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
   let responseObject = {};
+  let userId = getUserIdFromRequest(request);
 
   switch (intentName) {
     case WELCOME_MESSAGE_INTENT: {
@@ -69,7 +72,20 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
     }
     case ADD_TO_CART_INTENT: {
       console.log('add to cart -> log ', parameters);
-      responseObject = constructTextResponse('Added to Cart');
+      const { item } = parameters;
+      const items = [
+        {
+          item_name: item,
+          price: '250',
+        },
+      ];
+      const isItemAdded = await addToCart({ userId, items });
+      console.log('isItemAdded', isItemAdded);
+      if (isItemAdded) responseObject = constructTextResponse('Added to Cart');
+      else
+        responseObject = constructTextResponse(
+          'Something went wrong ,please add again',
+        );
       break;
     }
     default:

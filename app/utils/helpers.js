@@ -2,14 +2,8 @@ import requestWrapper from './requestWrapper';
 import responseParser from './responseParser';
 import { USER_PROFILE_GRAPH_API_FB_ENDPOINT } from './urls';
 import { PAGE_ACCESS_TOKEN } from './credentials';
-import PgConnection from 'postgresql-easy';
-export const pg = new PgConnection({
-  user: 'ggpmgzoswemare',
-  host: 'ec2-34-206-252-187.compute-1.amazonaws.com',
-  database: 'd94f7otd3e40nn',
-  password: 'c08b7cd425e121261d35a05471cd71a0664b5e8fc45596a9b12d0814d7b12bb2',
-  port: 5432,
-});
+import { pg } from '../connectors/config';
+import { insertIntoTransactionInfo } from '../queries';
 
 async function getAllProducts() {
   // const mockProducts = [
@@ -72,7 +66,30 @@ export const addOrUpdateUser = async userContext => {
     console.log(e);
   }
 };
-
+export const addToCart = async ({ userId = null, items }) => {
+  try {
+    console.log('started -> add to cart helper', userId);
+    if (!userId) {
+      console.log('add to cart helper -> userId is null');
+      return false;
+    }
+    var min = 100000;
+    const transactionId = (Math.random() * min + min).toFixed(0);
+    const transactionObject = {
+      sessionId: userId,
+      transactionId: transactionId,
+      totalPrice: '1500',
+      cartInfo: {
+        product_details: items,
+      },
+    };
+    const response = await insertIntoTransactionInfo(transactionObject);
+    console.log('response from add to cart', response);
+    return true;
+  } catch (err) {
+    console.log('error inside add to cart helper', err);
+  }
+};
 export const constructTextResponse = textResponse => {
   const response = {
     fulfillmentText: 'displayed&spoken response',
@@ -357,4 +374,12 @@ export const getUserDetails = async req => {
     }
     return userContext;
   }
+};
+export const getUserIdFromRequest = req => {
+  let senderInfo = get(req, 'body.originalDetectIntentRequest', '');
+  let senderId = null;
+  if (senderInfo) {
+    senderId = get(senderInfo, 'payload.data.sender.id');
+  }
+  return senderId;
 };

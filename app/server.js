@@ -11,7 +11,7 @@ app.get('/', (req, res) => res.send('hello'));
 global.sessionId = '';
 
 app.post('/fulfillmentResolver', async (req, res) => {
-  console.log('url ', req.url, JSON.stringify(req.body));
+  console.log('url ', req.url, req.body);
   sessionId = req.body.session;
   let responseObject = {};
   const queryResult = req.body.queryResult;
