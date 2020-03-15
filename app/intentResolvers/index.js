@@ -126,13 +126,13 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       const items = productDetails.map((item, index) => {
         return {
           text: {
-            text: [`${item} - Rs.${200 * (index + 1) * 3}`],
+            text: [`${item.item_name} - Rs.${200 * (index + 1) * 3}`],
           },
         };
       });
       responseObject = {
         fulfillmentMessages: [
-          { ...items },
+          ...items,
           {
             payload: {
               facebook: {
@@ -140,6 +140,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
                   type: 'template',
                   payload: {
                     template_type: 'button',
+                    text: 'What do you want to do next?',
                     buttons: [
                       {
                         type: 'postback',
