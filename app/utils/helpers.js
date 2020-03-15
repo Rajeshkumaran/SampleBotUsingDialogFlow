@@ -1,5 +1,7 @@
 import requestWrapper from './requestWrapper';
 import responseParser from './responseParser';
+import { USER_PROFILE_GRAPH_API_FB_ENDPOINT } from './urls';
+import { PAGE_ACCESS_TOKEN } from './credentials';
 const PgConnection = require('postgresql-easy');
 export const pg = new PgConnection({
   user: 'ggpmgzoswemare',
@@ -49,37 +51,35 @@ async function getAllProducts() {
   );
 }
 
-export const addOrUpdateUser = userContext => {
-  async () => {
-    try {
-      console.log('userId => ' + userContext.id);
-      let result = await pg.getById('users', userContext.id);
+export const addOrUpdateUser = async userContext => {
+  try {
+    console.log('userId => ' + userContext.id);
+    let result = await pg.getById('users', userContext.id);
 
-      let firstName = get(userContext, 'first_name');
-      let lastName = get(userContext, 'last_name');
-      let gender = get(userContext, 'gender');
-      let userId = get(userContext, 'id');
-      let sessionId = get(userContext, 'id');
-      let userObject = {
-        id: userId,
-        first_name: firstName,
-        last_name: lastName,
-        gender: gender,
-        session_id: sessionId,
-      };
+    let firstName = get(userContext, 'first_name');
+    let lastName = get(userContext, 'last_name');
+    let gender = get(userContext, 'gender');
+    let userId = get(userContext, 'id');
+    let sessionId = get(userContext, 'id');
+    let userObject = {
+      id: userId,
+      first_name: firstName,
+      last_name: lastName,
+      gender: gender,
+      session_id: sessionId,
+    };
 
-      if (result) {
-        console.log('inside user if==>');
-        result = pg.updateById('users', userContext.id, userObject);
-      } else {
-        console.log('inside user else==>');
-        result = pg.insert('users', userObject);
-      }
-      return JSON.parse(result);
-    } catch (e) {
-      console.log(e);
+    if (result) {
+      console.log('inside user if==>');
+      result = pg.updateById('users', userContext.id, userObject);
+    } else {
+      console.log('inside user else==>');
+      result = pg.insert('users', userObject);
     }
-  };
+    return JSON.parse(result);
+  } catch (e) {
+    console.log(e);
+  }
 };
 
 export const constructTextResponse = textResponse => {
@@ -343,7 +343,7 @@ export const getUserDetails = async req => {
         url,
       });
       userContext = responseParser(response);
-      console.log('user data', data);
+      console.log('user data', userContext);
       // TODO : need to insert user data into db
     }
     return userContext;
