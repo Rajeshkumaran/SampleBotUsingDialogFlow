@@ -70,13 +70,13 @@ export const addOrUpdateUser = async userContext => {
     };
 
     if (result) {
-      console.log('inside user if==>');
-      result = pg.updateById('users', userContext.id, userObject);
+      result = await pg.updateById('users', userContext.id, userObject);
+      console.log('inside user if==>', result);
     } else {
-      console.log('inside user else==>');
-      result = pg.insert('users', userObject);
+      result = await pg.insert('users', userObject);
+      console.log('inside user else==>', result);
     }
-    return JSON.parse(result);
+    return true; //JSON.parse(result);
   } catch (e) {
     console.log(e);
   }
