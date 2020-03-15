@@ -7,6 +7,7 @@ import {
   constructCardResponse,
   addToCart,
   getUserIdFromRequest,
+  get,
 } from '../utils/helpers';
 import {
   SHOW_PRODUCT_CATALOG_INTENT,
@@ -119,10 +120,40 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       break;
     }
     case VIEW_CART_INTENT: {
-      const cartInfo = await selectCartInfoUsingSessionId(userId);
-      console.log('cartInfo', cartInfo);
-      responseObject = constructTextResponse('Your cart');
-
+      const cart = await selectCartInfoUsingSessionId(userId);
+      const productDetails = get(cart[0], 'cart_info.product_details', []);
+      console.log('cartInfo', userId, cart, productDetails);
+      const items = productDetails.map((item, index) => {
+        return {
+          text: {
+            text: [`${item} - Rs.${200 * (index + 1) * 3}`],
+          },
+        };
+      });
+      responseObject = {
+        fulfillmentMessages: [
+          { ...items },
+          {
+            payload: {
+              facebook: {
+                attachment: {
+                  type: 'template',
+                  payload: {
+                    template_type: 'button',
+                    buttons: [
+                      {
+                        type: 'postback',
+                        title: 'Place order',
+                        payload: 'Place order',
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        ],
+      };
       break;
     }
     default:
