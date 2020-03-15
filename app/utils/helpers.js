@@ -128,8 +128,8 @@ export function constructCardResponse(cards) {
   let newCards = [];
   cards.map(eachCard => {
     return newCards.push({
-      title: eachCard.name,
-      image_url: eachCard.image_url,
+      ...(eachCard.image_url && { image_url: eachCard.image_url }),
+      ...(eachCard.name && { title: eachCard.name }),
       ...(eachCard.subtitle && { subtitle: eachCard.subtitle }),
       ...(eachCard.showCustomButtons
         ? {
