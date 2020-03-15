@@ -1,6 +1,5 @@
 import express from 'express';
 import config from './connectors/config';
-import { getUserDetails } from './utils/helpers';
 import resolveIntent from './intentResolvers';
 var bodyParser = require('body-parser');
 const { port } = config;
@@ -20,7 +19,7 @@ app.post('/fulfillmentResolver', async (req, res) => {
   const params = queryResult.parameters;
   responseObject = await resolveIntent({
     intentName,
-    params: '',
+    params,
     request: req,
   });
   console.log('responseObject -> to send : ', responseObject);

@@ -2,7 +2,7 @@ import requestWrapper from './requestWrapper';
 import responseParser from './responseParser';
 import { USER_PROFILE_GRAPH_API_FB_ENDPOINT } from './urls';
 import { PAGE_ACCESS_TOKEN } from './credentials';
-const PgConnection = require('postgresql-easy');
+import PgConnection from 'postgresql-easy';
 export const pg = new PgConnection({
   user: 'ggpmgzoswemare',
   host: 'ec2-34-206-252-187.compute-1.amazonaws.com',
