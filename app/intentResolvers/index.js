@@ -16,7 +16,8 @@ const resolveIntent = async ({ intentName = '', parameters = {} , request}) => {
       const userContext = await getUserDetails(request)
       console.log('userContext -=> ' + userContext);
       addOrUpdateUser(userContext);
-      responseObject = constructTextResponse('Hello ' + userContext.first_name);
+      let salutation = userContext.gender === 'male' ? 'Mr. ' : 'Ms. ';
+      responseObject = constructTextResponse('Hello ' + salutation + userContext.first_name);
       break;
     }
     case SHOW_PRODUCT_CATALOG_INTENT: {
