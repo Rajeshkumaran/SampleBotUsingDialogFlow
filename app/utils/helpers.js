@@ -49,8 +49,10 @@ async function getAllProducts() {
   );
 }
 
-export async function addOrUpdateUser(userContext) {
- 
+export const addOrUpdateUser = userContext => {
+  async() => {
+  try {
+   console.log('userId => ' + userContext.id);
       let result = await pg.getById('users', userContext.id);
 
       let firstName = get(userContext, 'first_name');
@@ -70,7 +72,11 @@ export async function addOrUpdateUser(userContext) {
 
       }
       return JSON.parse(result);
-    };
+    } catch(e) {
+console.log(e);
+    }
+  }
+};
 
 
 export const constructTextResponse = textResponse => {
