@@ -1,6 +1,8 @@
 import { pg } from '../connectors/config';
-export const selectTransactionUsingSessionId = session_id =>
-  `select * from transaction_info where session_id=${session_id}`;
+export const selectCartInfoUsingSessionId = session_id =>
+  pg.query(
+    `select cart_info from transaction_info where session_id=${session_id}`,
+  );
 export const insertIntoTransactionInfo = ({
   transactionId,
   sessionId,

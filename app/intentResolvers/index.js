@@ -13,7 +13,9 @@ import {
   ADD_TO_CART_INTENT,
   VIEW_PRODUCT_INTENT,
   WELCOME_MESSAGE_INTENT,
+  VIEW_CART_INTENT,
 } from '../utils/constants';
+import { selectCartInfoUsingSessionId } from '../queries';
 
 const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
   let responseObject = {};
@@ -92,8 +94,8 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
             buttons: [
               {
                 type: 'postback',
-                payload: `View Cartdetails`,
-                title: 'View Cartdetails',
+                payload: `View Cart`,
+                title: 'View Cart',
               },
             ],
           },
@@ -114,6 +116,13 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
         responseObject = constructTextResponse(
           'Something went wrong ,please add again',
         );
+      break;
+    }
+    case VIEW_CART_INTENT: {
+      const cartInfo = await selectCartInfoUsingSessionId(userId);
+      console.log('cartInfo', cartInfo);
+      responseObject = constructTextResponse('Your cart');
+
       break;
     }
     default:
