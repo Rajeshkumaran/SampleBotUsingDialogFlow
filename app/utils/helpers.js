@@ -116,7 +116,7 @@ export const constructTextResponse = textResponse => {
   };
   return response;
 };
-function constructCardResponse(cards) {
+export function constructCardResponse(cards) {
   let newCards = [];
   cards.map(eachCard => {
     return newCards.push({
@@ -139,17 +139,22 @@ function constructCardResponse(cards) {
     });
   });
   const response = {
-    payload: {
-      facebook: {
-        attachment: {
-          type: 'template',
-          payload: {
-            template_type: 'generic',
-            elements: newCards,
+    fulfillmentMessages: [
+      {
+        payload: {
+          facebook: {
+            attachment: {
+              type: 'template',
+              payload: {
+                template_type: 'generic',
+                elements: newCards,
+              },
+            },
           },
         },
+        platform: 'FACEBOOK',
       },
-    },
+    ],
 
     // outputContexts: [
     //   {

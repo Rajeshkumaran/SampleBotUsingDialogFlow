@@ -4,6 +4,7 @@ import {
   constructTextResponse,
   getUserDetails,
   addOrUpdateUser,
+  constructCardResponse,
 } from '../utils/helpers';
 import {
   SHOW_PRODUCT_CATALOG_INTENT,
@@ -21,7 +22,38 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       console.log('userContext -=> ' + userContext);
       addOrUpdateUser(userContext);
       let salutation = userContext.gender === 'male' ? 'Mr. ' : 'Ms. ';
-      responseObject = constructTextResponse('Hello ' + salutation + userContext.first_name);
+      const greetingMessage = `Hello ${salutation}${userContext.first_name}`;
+      responseObject = constructCardResponse([
+        {
+          showCustomButtons: true,
+          name: 'Welcome to ABC supermarket',
+          image_url:
+            'https://lh3.googleusercontent.com/_0EOeOXx2WC-vkEwzhKHzhxeQjhgHIeHJKWljeUzAjos3QLfca8eWDCadZiBJ1mSY2hdx3lCaY8g6iUMDMQiz1b7T2ttpOkJSg=s750',
+          buttons: [
+            {
+              type: 'postback',
+              payload: 'View Products',
+              title: 'View Products',
+            },
+            // {
+            //   type: 'postback',
+            //   payload: 'Select Quantity for Dark Chocolate',
+            //   title: 'Select Quantity',
+            // },
+          ],
+        },
+      ]);
+      responseObject = {
+        fulfillmentMessages: [
+          {
+            text: {
+              text: [greetingMessage],
+            },
+            platform: 'FACEBOOK',
+          },
+          ...responseObject.fulfillmentMessages,
+        ],
+      };
       break;
     }
     case SHOW_PRODUCT_CATALOG_INTENT: {
