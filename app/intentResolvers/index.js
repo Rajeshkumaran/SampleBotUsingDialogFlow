@@ -8,15 +8,16 @@ import {
 } from '../utils/helpers';
 import {
   SHOW_PRODUCT_CATALOG_INTENT,
-  VIEW_PRODUCT,
-  WELCOME_MESSAGE,
+  ADD_TO_CART_INTENT,
+  VIEW_PRODUCT_INTENT,
+  WELCOME_MESSAGE_INTENT,
 } from '../utils/constants';
 
 const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
   let responseObject = {};
 
   switch (intentName) {
-    case WELCOME_MESSAGE: {
+    case WELCOME_MESSAGE_INTENT: {
       console.log('inside welcome message');
       const userContext = await getUserDetails(request);
       console.log('userContext -=> ' + userContext);
@@ -57,12 +58,18 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       break;
     }
     case SHOW_PRODUCT_CATALOG_INTENT: {
-      responseObject = await constructProductCatalog();
+      const products = await constructProductCatalog();
+      responseObject = constructCardResponse(products);
       break;
     }
-    case VIEW_PRODUCT: {
+    case VIEW_PRODUCT_INTENT: {
       const { category_types = 'Nuts' } = parameters;
       responseObject = productsBasedOnCategory(category_types);
+      break;
+    }
+    case ADD_TO_CART_INTENT: {
+      console.log('add to cart -> log ', parameters);
+      responseObject = constructTextResponse('Added to Cart');
       break;
     }
     default:

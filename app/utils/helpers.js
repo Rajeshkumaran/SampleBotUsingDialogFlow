@@ -39,16 +39,7 @@ async function getAllProducts() {
   //   },
   // ];
   // return constructCardResponse(mockProducts);
-  return new Promise((resolve, reject) =>
-    pool.query('SELECT * FROM categories ORDER BY name', (error, results) => {
-      if (error) {
-        throw error;
-      }
-      console.log('DB Results ==> ' + JSON.stringify(results.rows));
-      var jsonResult = JSON.stringify(results.rows);
-      resolve(constructCardResponse(JSON.parse(jsonResult)));
-    }),
-  );
+  return pg.query('SELECT * FROM categories ORDER BY name');
 }
 
 export const addOrUpdateUser = async userContext => {
@@ -173,7 +164,20 @@ export const constructProductCatalog = async () => {
 
   let products = await getAllProducts();
   console.log('products ----> ', JSON.stringify(products));
-  return products;
+  const buttonsIncludedToProducts = products.map(product => {
+    return {
+      ...product,
+      showCustomButtons: true,
+      buttons: [
+        {
+          type: 'postback',
+          payload: `View More on ${product.name}`,
+          title: 'View More',
+        },
+      ],
+    };
+  });
+  return buttonsIncludedToProducts;
 };
 export const productsBasedOnCategory = category => {
   const products = {

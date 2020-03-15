@@ -16,10 +16,10 @@ app.post('/fulfillmentResolver', async (req, res) => {
   let responseObject = {};
   const queryResult = req.body.queryResult;
   const intentName = queryResult.intent.displayName;
-  const params = queryResult.parameters;
+  const { parameters } = queryResult;
   responseObject = await resolveIntent({
     intentName,
-    params,
+    parameters,
     request: req,
   });
   console.log('responseObject -> to send : ', responseObject);
