@@ -13,7 +13,7 @@ const resolveIntent = async ({ intentName = '', parameters = {} , request}) => {
   switch (intentName) {
     case WELCOME_MESSAGE: {
       console.log('inside welcome message');
-      const userContext = getUserDetails(request)
+      const userContext = await getUserDetails(request)
       console.log('userContext -=> ' + userContext);
       addOrUpdateUser(userContext);
       responseObject = constructTextResponse('Hello ' + userContext.first_name);
