@@ -325,6 +325,7 @@ export const get = (from, selector, defaultVal) => {
 export const getUserDetails = async req => {
   let userContext = {};
   let senderInfo = get(req, 'body.originalDetectIntentRequest', '');
+  console.log('senderinfo ==> ' + senderInfo);
   if (senderInfo) {
     const senderId = get(senderInfo, 'payload.data.sender.id');
     // TODO fetch user data from db before inserting into it
