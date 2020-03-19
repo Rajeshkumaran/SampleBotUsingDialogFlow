@@ -3,7 +3,11 @@ import responseParser from './responseParser';
 import { USER_PROFILE_GRAPH_API_FB_ENDPOINT } from './urls';
 import { PAGE_ACCESS_TOKEN } from './credentials';
 import { pg } from '../connectors/config';
-import { insertIntoTransactionInfo } from '../queries';
+import {
+  insertIntoTransactionInfo,
+  selectCartInfoUsingSessionId,
+  updateCartInfoBySessionId,
+} from '../queries';
 
 async function getAllProducts() {
   // const mockProducts = [
@@ -73,18 +77,47 @@ export const addToCart = async ({ userId = null, items }) => {
       console.log('add to cart helper -> userId is null');
       return false;
     }
-    var min = 100000;
-    const transactionId = (Math.random() * min + min).toFixed(0);
-    const transactionObject = {
-      sessionId: userId,
-      transactionId: transactionId,
-      totalPrice: '1500',
-      cartInfo: {
-        product_details: items,
-      },
-    };
-    const response = await insertIntoTransactionInfo(transactionObject);
-    console.log('response from add to cart', response);
+
+    // before adding to cart need to check already exiting cart or not
+    const userCartInfo = await selectCartInfoUsingSessionId(userId);
+    if (userCartInfo.length === 1) {
+      // if active cart already existing then update the existing cart with new Items
+      console.log('add to cart helper -> active cart existed', userCartInfo);
+
+      const productDetails = get(
+        userCartInfo[0],
+        'cart_info.product_details',
+        [],
+      );
+      console.log('new product details ', items, productDetails, [
+        ...productDetails,
+        ...items,
+      ]);
+      const response = await updateCartInfoBySessionId({
+        sessionId: userId,
+        totalPrice: '3750',
+        cartInfo: {
+          product_details: [...productDetails, ...items],
+        },
+      });
+      console.log('response from add to cart updation', response);
+    } else {
+      // else create a new cart and make it as active
+      console.log('add to cart helper -> new cart creation');
+
+      var min = 100000;
+      const id = (Math.random() * min + min).toFixed(0);
+      const transactionObject = {
+        sessionId: userId,
+        id: id,
+        totalPrice: '1500',
+        cartInfo: {
+          product_details: items,
+        },
+      };
+      const response = await insertIntoTransactionInfo(transactionObject);
+      console.log('response from add to cart insertion', response);
+    }
     return true;
   } catch (err) {
     console.log('error inside add to cart helper', err);

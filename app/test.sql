@@ -4,7 +4,8 @@ CREATE TABLE users(id VARCHAR PRIMARY KEY,first_name VARCHAR,last_name VARCHAR,g
 
 
 /* ----------------- transaction_info table -------------- */
-create table transaction_info(transaction_id serial primary key,session_id VARCHAR(25),total_price VARCHAR(7),created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,cart_info jsonb);d
+create TABLE transaction_info(id VARCHAR PRIMARY key,session_id VARCHAR,is_active BOOLEAN,total_price VARCHAR,cart_info jsonb,created_at DATE NOT NULL DEFAULT CURRENT_DATE,updated_at DATE NOT NULL DEFAULT CURRENT_DATE
+                             );
 
-INSERT INTO transaction_info (transaction_id,session_id,total_price,cart_info) values('12345','2798396676905089','4234','{"cart_info":{"products":["dark chocolate","badam"]}}')
+INSERT INTO transaction_info (id,session_id,total_price,cart_info,is_active) values('12345','2798396676905089','4234','{"cart_info":{"products":["dark chocolate","badam"]}}',true)
 

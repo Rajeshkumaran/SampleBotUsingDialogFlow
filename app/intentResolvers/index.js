@@ -16,7 +16,10 @@ import {
   WELCOME_MESSAGE_INTENT,
   VIEW_CART_INTENT,
 } from '../utils/constants';
-import { selectCartInfoUsingSessionId } from '../queries';
+import {
+  selectCartInfoUsingSessionId,
+  updateCartInfoBySessionId,
+} from '../queries';
 
 const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
   let responseObject = {};
@@ -152,13 +155,33 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
                 },
               },
             },
+            platform: 'FACEBOOK',
           },
         ],
       };
       break;
     }
-    default:
+    default: {
+      // const items = [
+      //   {
+      //     item_name: 'Ghee',
+      //     price: '250',
+      //     quantity: 1,
+      //   },
+      // ];
+      // const isItemAdded = await addToCart({
+      //   userId,
+      //   items,
+      // });
+      // console.log('isItemAdded', isItemAdded);
+      // if (isItemAdded) {
+      //   console.log('add to cart success', isItemAdded);
+      // } else
+      //   responseObject = constructTextResponse(
+      //     'Something went wrong ,please add again',
+      //   );
       responseObject = constructTextResponse('Pardon come again');
+    }
   }
   return responseObject;
 };
