@@ -2,7 +2,7 @@ import requestWrapper from './requestWrapper';
 import responseParser from './responseParser';
 import { USER_PROFILE_GRAPH_API_FB_ENDPOINT } from './urls';
 import { PAGE_ACCESS_TOKEN } from './credentials';
-import { pg } from '../connectors/config';
+import { postgreSqlConnection } from '../connectors/config';
 import {
   insertIntoTransactionInfo,
   selectCartInfoUsingSessionId,
@@ -37,13 +37,13 @@ async function getAllProducts() {
   //   },
   // ];
   // return constructCardResponse(mockProducts);
-  return pg.query('SELECT * FROM categories ORDER BY name');
+  return postgreSqlConnection.query('SELECT * FROM categories ORDER BY name');
 }
 
 export const addOrUpdateUser = async userContext => {
   try {
     console.log('userId => ' + userContext.id);
-    let result = await pg.getById('users', userContext.id);
+    let result = await postgreSqlConnection.getById('users', userContext.id);
 
     let firstName = get(userContext, 'first_name');
     let lastName = get(userContext, 'last_name');
@@ -59,10 +59,14 @@ export const addOrUpdateUser = async userContext => {
     };
 
     if (result) {
-      result = await pg.updateById('users', userContext.id, userObject);
+      result = await postgreSqlConnection.updateById(
+        'users',
+        userContext.id,
+        userObject,
+      );
       console.log('inside user if==>', result);
     } else {
-      result = await pg.insert('users', userObject);
+      result = await postgreSqlConnection.insert('users', userObject);
       console.log('inside user else==>', result);
     }
     return true; //JSON.parse(result);
