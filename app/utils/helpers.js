@@ -2,8 +2,12 @@ import requestWrapper from './requestWrapper';
 import responseParser from './responseParser';
 import { USER_PROFILE_GRAPH_API_FB_ENDPOINT } from './urls';
 import { PAGE_ACCESS_TOKEN } from './credentials';
-import { pg } from '../connectors/config';
-import { insertIntoTransactionInfo } from '../queries';
+import { postgreSqlConnection } from '../connectors/config';
+import {
+  insertIntoTransactionInfo,
+  selectCartInfoUsingSessionId,
+  updateCartInfoBySessionId,
+} from '../queries';
 
 async function getAllProducts() {
   // const mockProducts = [
@@ -33,13 +37,13 @@ async function getAllProducts() {
   //   },
   // ];
   // return constructCardResponse(mockProducts);
-  return pg.query('SELECT * FROM categories ORDER BY name');
+  return postgreSqlConnection.query('SELECT * FROM categories ORDER BY name');
 }
 
 export const addOrUpdateUser = async userContext => {
   try {
     console.log('userId => ' + userContext.id);
-    let result = await pg.getById('users', userContext.id);
+    let result = await postgreSqlConnection.getById('users', userContext.id);
 
     let firstName = get(userContext, 'first_name');
     let lastName = get(userContext, 'last_name');
@@ -55,10 +59,14 @@ export const addOrUpdateUser = async userContext => {
     };
 
     if (result) {
-      result = await pg.updateById('users', userContext.id, userObject);
+      result = await postgreSqlConnection.updateById(
+        'users',
+        userContext.id,
+        userObject,
+      );
       console.log('inside user if==>', result);
     } else {
-      result = await pg.insert('users', userObject);
+      result = await postgreSqlConnection.insert('users', userObject);
       console.log('inside user else==>', result);
     }
     return true; //JSON.parse(result);
@@ -66,25 +74,93 @@ export const addOrUpdateUser = async userContext => {
     console.log(e);
   }
 };
-export const addToCart = async ({ userId = null, items }) => {
+const calculateTotalPrice = items => {
+  let totalPrice = 0;
+  items.map(item => (totalPrice += parseInt(item.price, 10)));
+  return totalPrice;
+};
+const updateProductDetails = ({
+  itemsInCart,
+  oldProductDetails,
+  itemsToBeAdded,
+}) => {
+  let updatedProductDetails = [...oldProductDetails];
+  for (let i = 0, len = itemsToBeAdded.length; i < len; i += 1) {
+    const { item_name } = itemsToBeAdded[i];
+    let isExist = itemsInCart.includes(item_name);
+    if (isExist) {
+      // item is available in cart =>>>>> need to update item details like quantity, price ,etc ...
+      const index = itemsInCart.findIndex(item => item === item_name);
+      updatedProductDetails[index] = {
+        ...oldProductDetails[index],
+        quantity:
+          oldProductDetails[index].quantity + itemsToBeAdded[i].quantity,
+        price:
+          parseInt(oldProductDetails[index].price, 10) +
+          parseInt(itemsToBeAdded[i].price, 10),
+      };
+    } else {
+      // item is not already available =>>>>> push it to the existing cart
+      updatedProductDetails.push(itemsToBeAdded[i]);
+    }
+    console.log('updatedProductDetails ----->', updatedProductDetails);
+    return updatedProductDetails;
+  }
+};
+export const addToCart = async ({ userId = null, itemsToBeAdded }) => {
   try {
     console.log('started -> add to cart helper', userId);
     if (!userId) {
       console.log('add to cart helper -> userId is null');
       return false;
     }
-    var min = 100000;
-    const transactionId = (Math.random() * min + min).toFixed(0);
-    const transactionObject = {
-      sessionId: userId,
-      transactionId: transactionId,
-      totalPrice: '1500',
-      cartInfo: {
-        product_details: items,
-      },
-    };
-    const response = await insertIntoTransactionInfo(transactionObject);
-    console.log('response from add to cart', response);
+
+    // before adding to cart need to check already exiting cart or not
+    const userCartInfo = await selectCartInfoUsingSessionId(userId);
+    if (userCartInfo.length === 1) {
+      // if active cart already existing then update the existing cart with new Items
+      console.log('add to cart helper -> active cart existed', userCartInfo);
+
+      const oldProductDetails = get(
+        userCartInfo[0],
+        'cart_info.product_details',
+        [],
+      );
+
+      const itemsInCart = oldProductDetails.map(item => item.item_name);
+      const updatedCartInfo = updateProductDetails({
+        itemsInCart,
+        oldProductDetails,
+        itemsToBeAdded,
+      });
+      const totalPrice = calculateTotalPrice(updatedCartInfo);
+      const response = await updateCartInfoBySessionId({
+        sessionId: userId,
+        totalPrice,
+        cartInfo: {
+          product_details: updatedCartInfo,
+        },
+      });
+      console.log('response from add to cart updation', response);
+    } else {
+      // else create a new cart and make it as active
+      console.log('add to cart helper -> new cart creation');
+
+      var min = 100000;
+      const id = (Math.random() * min + min).toFixed(0);
+      const totalPrice = calculateTotalPrice(itemsToBeAdded);
+
+      const transactionObject = {
+        sessionId: userId,
+        id,
+        totalPrice,
+        cartInfo: {
+          product_details: itemsToBeAdded,
+        },
+      };
+      const response = await insertIntoTransactionInfo(transactionObject);
+      console.log('response from add to cart insertion', response);
+    }
     return true;
   } catch (err) {
     console.log('error inside add to cart helper', err);

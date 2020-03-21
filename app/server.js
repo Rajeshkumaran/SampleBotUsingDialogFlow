@@ -11,6 +11,7 @@ app.get('/', (req, res) => res.send('hello'));
 global.sessionId = '';
 
 app.post('/fulfillmentResolver', async (req, res) => {
+  const startTime = new Date().getTime();
   console.log('url ', req.url, req.body);
   sessionId = req.body.session;
   let responseObject = {};
@@ -22,7 +23,10 @@ app.post('/fulfillmentResolver', async (req, res) => {
     parameters,
     request: req,
   });
+  const endTime = new Date().getTime();
+  const processingTime = (endTime - startTime) / 1000;
   console.log('responseObject -> to send : ', JSON.stringify(responseObject));
+  console.log('processingTime for this request -> ', processingTime);
   res.send(responseObject);
 });
 
