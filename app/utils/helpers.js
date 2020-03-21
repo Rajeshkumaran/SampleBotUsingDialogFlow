@@ -74,6 +74,11 @@ export const addOrUpdateUser = async userContext => {
     console.log(e);
   }
 };
+const calculateTotalPrice = items => {
+  let totalPrice = 0;
+  items.map(item => (totalPrice += parseInt(item.price, 10)));
+  return totalPrice;
+};
 const updateProductDetails = ({
   itemsInCart,
   oldProductDetails,
@@ -128,9 +133,10 @@ export const addToCart = async ({ userId = null, itemsToBeAdded }) => {
         oldProductDetails,
         itemsToBeAdded,
       });
+      const totalPrice = calculateTotalPrice(updatedCartInfo);
       const response = await updateCartInfoBySessionId({
         sessionId: userId,
-        totalPrice: '3750',
+        totalPrice,
         cartInfo: {
           product_details: updatedCartInfo,
         },
@@ -142,10 +148,12 @@ export const addToCart = async ({ userId = null, itemsToBeAdded }) => {
 
       var min = 100000;
       const id = (Math.random() * min + min).toFixed(0);
+      const totalPrice = calculateTotalPrice(itemsToBeAdded);
+
       const transactionObject = {
         sessionId: userId,
-        id: id,
-        totalPrice: '1500',
+        id,
+        totalPrice,
         cartInfo: {
           product_details: itemsToBeAdded,
         },

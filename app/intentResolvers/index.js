@@ -79,7 +79,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       const items = [
         {
           item_name: item,
-          price: '250',
+          price: 250,
           quantity: 1,
         },
       ];
