@@ -16,10 +16,7 @@ import {
   WELCOME_MESSAGE_INTENT,
   VIEW_CART_INTENT,
 } from '../utils/constants';
-import {
-  selectCartInfoUsingSessionId,
-  updateCartInfoBySessionId,
-} from '../queries';
+import { selectCartInfoUsingSessionId } from '../queries';
 
 const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
   let responseObject = {};
@@ -86,7 +83,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
           quantity: 1,
         },
       ];
-      const isItemAdded = await addToCart({ userId, items });
+      const isItemAdded = await addToCart({ userId, itemsToBeAdded: items });
       console.log('isItemAdded', isItemAdded);
       if (isItemAdded) {
         responseObject = constructCardResponse([
@@ -124,62 +121,55 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
     }
     case VIEW_CART_INTENT: {
       const cart = await selectCartInfoUsingSessionId(userId);
-      const productDetails = get(cart[0], 'cart_info.product_details', []);
+      let productDetails = get(cart[0], 'cart_info.product_details', []);
       console.log('cartInfo', userId, cart, productDetails);
-      const items = productDetails.map((item, index) => {
+      productDetails = productDetails.map(item => {
+        const { item_name, price, quantity } = item;
         return {
-          text: {
-            text: [`${item.item_name} - Rs.${200 * (index + 1) * 3}`],
-          },
+          name: item_name,
+          subtitle: `Price - ${price}\nQuantity - ${quantity}`,
+          showCustomButtons: true,
+          buttons: [
+            {
+              type: 'postback',
+              payload: 'Add more',
+              title: 'Add More',
+            },
+          ],
         };
       });
+      responseObject = constructCardResponse(productDetails);
       responseObject = {
         fulfillmentMessages: [
-          ...items,
           {
             payload: {
               facebook: {
-                attachment: {
-                  type: 'template',
-                  payload: {
-                    template_type: 'button',
-                    text: 'What do you want to do next?',
-                    buttons: [
-                      {
-                        type: 'postback',
-                        title: 'Place order',
-                        payload: 'Place order',
-                      },
-                    ],
+                attachment: get(
+                  responseObject,
+                  'fulfillmentMessages[0].payload.facebook.attachment',
+                  {},
+                ),
+                quick_replies: [
+                  {
+                    content_type: 'text',
+                    title: 'Place order',
+                    payload: 'Place order',
                   },
-                },
+                  {
+                    content_type: 'text',
+                    title: 'Add more products',
+                    payload: 'Add more products',
+                  },
+                ],
               },
+              platform: 'FACEBOOK',
             },
-            platform: 'FACEBOOK',
           },
         ],
       };
       break;
     }
     default: {
-      // const items = [
-      //   {
-      //     item_name: 'Ghee',
-      //     price: '250',
-      //     quantity: 1,
-      //   },
-      // ];
-      // const isItemAdded = await addToCart({
-      //   userId,
-      //   items,
-      // });
-      // console.log('isItemAdded', isItemAdded);
-      // if (isItemAdded) {
-      //   console.log('add to cart success', isItemAdded);
-      // } else
-      //   responseObject = constructTextResponse(
-      //     'Something went wrong ,please add again',
-      //   );
       responseObject = constructTextResponse('Pardon come again');
     }
   }

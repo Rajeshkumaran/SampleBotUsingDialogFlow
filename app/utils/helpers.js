@@ -74,7 +74,35 @@ export const addOrUpdateUser = async userContext => {
     console.log(e);
   }
 };
-export const addToCart = async ({ userId = null, items }) => {
+const updateProductDetails = ({
+  itemsInCart,
+  oldProductDetails,
+  itemsToBeAdded,
+}) => {
+  let updatedProductDetails = [...oldProductDetails];
+  for (let i = 0, len = itemsToBeAdded.length; i < len; i += 1) {
+    const { item_name } = itemsToBeAdded[i];
+    let isExist = itemsInCart.includes(item_name);
+    if (isExist) {
+      // item is available in cart =>>>>> need to update item details like quantity, price ,etc ...
+      const index = itemsInCart.findIndex(item => item === item_name);
+      updatedProductDetails[index] = {
+        ...oldProductDetails[index],
+        quantity:
+          oldProductDetails[index].quantity + itemsToBeAdded[i].quantity,
+        price:
+          parseInt(oldProductDetails[index].price, 10) +
+          parseInt(itemsToBeAdded[i].price, 10),
+      };
+    } else {
+      // item is not already available =>>>>> push it to the existing cart
+      updatedProductDetails.push(itemsToBeAdded[i]);
+    }
+    console.log('updatedProductDetails ----->', updatedProductDetails);
+    return updatedProductDetails;
+  }
+};
+export const addToCart = async ({ userId = null, itemsToBeAdded }) => {
   try {
     console.log('started -> add to cart helper', userId);
     if (!userId) {
@@ -88,20 +116,23 @@ export const addToCart = async ({ userId = null, items }) => {
       // if active cart already existing then update the existing cart with new Items
       console.log('add to cart helper -> active cart existed', userCartInfo);
 
-      const productDetails = get(
+      const oldProductDetails = get(
         userCartInfo[0],
         'cart_info.product_details',
         [],
       );
-      console.log('new product details ', items, productDetails, [
-        ...productDetails,
-        ...items,
-      ]);
+
+      const itemsInCart = oldProductDetails.map(item => item.item_name);
+      const updatedCartInfo = updateProductDetails({
+        itemsInCart,
+        oldProductDetails,
+        itemsToBeAdded,
+      });
       const response = await updateCartInfoBySessionId({
         sessionId: userId,
         totalPrice: '3750',
         cartInfo: {
-          product_details: [...productDetails, ...items],
+          product_details: updatedCartInfo,
         },
       });
       console.log('response from add to cart updation', response);
@@ -116,7 +147,7 @@ export const addToCart = async ({ userId = null, items }) => {
         id: id,
         totalPrice: '1500',
         cartInfo: {
-          product_details: items,
+          product_details: itemsToBeAdded,
         },
       };
       const response = await insertIntoTransactionInfo(transactionObject);
