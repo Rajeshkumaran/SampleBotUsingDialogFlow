@@ -108,6 +108,12 @@ export const addToCart = async ({ userId = null, productsToBeAdded }) => {
         oldProductDetails,
         productsToBeAdded,
       });
+      console.log(
+        'inside View cart -> active cart logic',
+        userCartInfo,
+        productsInCart,
+        updatedCartInfo,
+      );
       const totalPrice = calculateTotalPrice(updatedCartInfo);
       const response = await updateCartInfoBySessionId({
         sessionId: userId,

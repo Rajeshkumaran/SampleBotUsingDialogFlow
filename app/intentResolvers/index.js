@@ -18,7 +18,10 @@ import {
   SHOW_CATEGORIES_INTENT,
   SHOW_SUB_CATEGORIES_INTENT,
 } from '../utils/constants';
-import { selectCartInfoUsingSessionId } from '../queries';
+import {
+  selectCartInfoUsingSessionId,
+  getProductsByProductName,
+} from '../queries';
 
 const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
   let responseObject = {};
@@ -90,16 +93,25 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
     }
     case ADD_TO_CART_INTENT: {
       const { productName } = parameters;
-      const products = [
-        {
-          product_name: productName,
-          price: 250,
-          quantity: 1,
-        },
-      ];
+      if (!productName) {
+        // if particular product is available on search
+        responseObject = constructTextResponse(
+          `Sorry,currently we don't have that product`,
+        );
+        return;
+      }
+      let productDetails = await getProductsByProductName({ productName });
+      productDetails = productDetails.map(({ name, price, measure_unit }) => ({
+        product_name: name,
+        price,
+        quantity: 1,
+        measure_unit,
+      }));
+
+      console.log('inside ADD_TO_CART_INTENT ', productDetails);
       const isItemAdded = await addToCart({
         userId,
-        productsToBeAdded: products,
+        productsToBeAdded: productDetails,
       });
       console.log('isItemAdded', isItemAdded);
       if (isItemAdded) {
@@ -140,10 +152,10 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       let productDetails = get(cart[0], 'cart_info.product_details', []);
       console.log('cartInfo', userId, cart, productDetails);
       productDetails = productDetails.map(item => {
-        const { product_name, price, quantity } = item;
+        const { product_name, price, quantity, measure_unit } = item;
         return {
           title: product_name,
-          subtitle: `Price - ${price}\nQuantity - ${quantity}`,
+          subtitle: `Price - ${price}\nQuantity - ${quantity} ${measure_unit}`,
           showCustomButtons: true,
           buttons: [
             {
@@ -174,7 +186,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
                   {
                     content_type: 'text',
                     title: 'Add more products',
-                    payload: 'See products',
+                    payload: 'Show categories',
                   },
                 ],
               },

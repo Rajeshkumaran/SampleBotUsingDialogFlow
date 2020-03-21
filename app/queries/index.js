@@ -38,3 +38,7 @@ export const getProductsBySubCategories = ({ subCategoryName = '' }) =>
   postgreSqlConnection.query(
     `select * from products where sub_category_name='${subCategoryName}'`,
   );
+export const getProductsByProductName = ({ productName }) =>
+  postgreSqlConnection.query(
+    `select * from products where name='${productName}'`,
+  );
