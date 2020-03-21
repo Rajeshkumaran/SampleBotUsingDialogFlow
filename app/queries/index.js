@@ -24,3 +24,17 @@ export const updateCartInfoBySessionId = ({
       cartInfo,
     )}'where session_id='${sessionId}'`,
   );
+export const getCategories = () =>
+  postgreSqlConnection.query('select * from categories');
+export const getSubCategoriesByCategories = ({ categoryName = '' }) =>
+  postgreSqlConnection.query(
+    `select * from sub_categories where category_name='${categoryName}'`,
+  );
+export const getProductsByCategories = ({ categoryName = '' }) =>
+  postgreSqlConnection.query(
+    `select * from products where category_name='${categoryName}'`,
+  );
+export const getProductsBySubCategories = ({ subCategoryName = '' }) =>
+  postgreSqlConnection.query(
+    `select * from products where sub_category_name='${subCategoryName}'`,
+  );

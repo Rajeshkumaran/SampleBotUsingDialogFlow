@@ -6,7 +6,9 @@ const { port } = config;
 var app = express();
 app.use(bodyParser.json({ limit: '256kb' })); // parse application/json
 
-app.get('/', (req, res) => res.send('hello'));
+app.get('/', async (req, res) => {
+  res.send('hello');
+});
 
 global.sessionId = '';
 

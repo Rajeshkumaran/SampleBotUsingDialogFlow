@@ -1,6 +1,6 @@
 import {
-  constructProductCatalog,
-  productsBasedOnCategory,
+  getAllCategories,
+  getAllSubCategories,
   constructTextResponse,
   getUserDetails,
   addOrUpdateUser,
@@ -8,13 +8,15 @@ import {
   addToCart,
   getUserIdFromRequest,
   get,
+  getAllProducts,
 } from '../utils/helpers';
 import {
-  SHOW_PRODUCT_CATALOG_INTENT,
   ADD_TO_CART_INTENT,
   VIEW_PRODUCT_INTENT,
   WELCOME_MESSAGE_INTENT,
   VIEW_CART_INTENT,
+  SHOW_CATEGORIES_INTENT,
+  SHOW_SUB_CATEGORIES_INTENT,
 } from '../utils/constants';
 import { selectCartInfoUsingSessionId } from '../queries';
 
@@ -33,14 +35,14 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       responseObject = constructCardResponse([
         {
           showCustomButtons: true,
-          name: 'Welcome to ABC supermarket',
+          title: 'Welcome to ABC supermarket',
           image_url:
             'https://lh3.googleusercontent.com/_0EOeOXx2WC-vkEwzhKHzhxeQjhgHIeHJKWljeUzAjos3QLfca8eWDCadZiBJ1mSY2hdx3lCaY8g6iUMDMQiz1b7T2ttpOkJSg=s750',
           buttons: [
             {
               type: 'postback',
-              payload: 'View Products',
-              title: 'View Products',
+              payload: 'View Categories',
+              title: 'Show Categories',
             },
             {
               type: 'postback',
@@ -63,27 +65,42 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       };
       break;
     }
-    case SHOW_PRODUCT_CATALOG_INTENT: {
-      const products = await constructProductCatalog();
+    case SHOW_CATEGORIES_INTENT: {
+      const categories = await getAllCategories();
+      responseObject = constructCardResponse(categories);
+      break;
+    }
+    case SHOW_SUB_CATEGORIES_INTENT: {
+      const { categoryName } = parameters;
+      const subCategories = await getAllSubCategories({
+        categoryName,
+      });
+      responseObject = constructCardResponse(subCategories);
+      break;
+    }
+
+    case VIEW_PRODUCT_INTENT: {
+      const { categoryName = null, subCategoryName = null } = parameters;
+      const products = await getAllProducts({
+        categoryName,
+        subCategoryName,
+      });
       responseObject = constructCardResponse(products);
       break;
     }
-    case VIEW_PRODUCT_INTENT: {
-      const { category_types = 'Nuts' } = parameters;
-      responseObject = productsBasedOnCategory(category_types);
-      break;
-    }
     case ADD_TO_CART_INTENT: {
-      console.log('add to cart -> log ', parameters);
-      const { item } = parameters;
-      const items = [
+      const { productName } = parameters;
+      const products = [
         {
-          item_name: item,
+          product_name: productName,
           price: 250,
           quantity: 1,
         },
       ];
-      const isItemAdded = await addToCart({ userId, itemsToBeAdded: items });
+      const isItemAdded = await addToCart({
+        userId,
+        productsToBeAdded: products,
+      });
       console.log('isItemAdded', isItemAdded);
       if (isItemAdded) {
         responseObject = {
@@ -110,17 +127,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
             },
           ],
         };
-        // responseObject = {
-        //   fulfillmentMessages: [
-        //     {
-        //       text: {
-        //         text: [`Added ${item} to cart`],
-        //       },
-        //       platform: 'FACEBOOK',
-        //     },
-        //     ...responseObject.fulfillmentMessages,
-        //   ],
-        // };
+
         console.log('add to cart success', responseObject);
       } else
         responseObject = constructTextResponse(
@@ -133,9 +140,9 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       let productDetails = get(cart[0], 'cart_info.product_details', []);
       console.log('cartInfo', userId, cart, productDetails);
       productDetails = productDetails.map(item => {
-        const { item_name, price, quantity } = item;
+        const { product_name, price, quantity } = item;
         return {
-          name: item_name,
+          title: product_name,
           subtitle: `Price - ${price}\nQuantity - ${quantity}`,
           showCustomButtons: true,
           buttons: [
