@@ -9,6 +9,7 @@ import {
   getUserIdFromRequest,
   get,
   getAllProducts,
+  calculateTotalPrice,
 } from '../utils/helpers';
 import {
   ADD_TO_CART_INTENT,
@@ -154,12 +155,15 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
         return;
       }
       let productDetails = await getProductsByProductName({ productName });
-      productDetails = productDetails.map(({ name, price, measure_unit }) => ({
-        product_name: name,
-        price,
-        quantity: 1,
-        measure_unit,
-      }));
+      productDetails = productDetails.map(
+        ({ name, price, measure_unit, image_url }) => ({
+          product_name: name,
+          price,
+          quantity: 1,
+          measure_unit,
+          image_url,
+        }),
+      );
 
       console.log('inside ADD_TO_CART_INTENT ', productDetails);
       const isItemAdded = await addToCart({
@@ -202,34 +206,46 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
     }
     case VIEW_CART_INTENT: {
       const cart = await selectCartInfoUsingSessionId(userId);
+      const transactionId = get(cart, 'id', 11111);
       let productDetails = get(cart[0], 'cart_info.product_details', []);
       console.log('cartInfo', userId, cart, productDetails);
+
       productDetails = productDetails.map(item => {
-        const { product_name, price, quantity, measure_unit } = item;
+        const { product_name, image_url, price, quantity, measure_unit } = item;
         return {
           title: product_name,
-          subtitle: `Price - ${price}\nQuantity - ${quantity} ${measure_unit}`,
-          showCustomButtons: true,
-          buttons: [
-            {
-              type: 'postback',
-              payload: 'Add more',
-              title: 'Add More',
-            },
-          ],
+          subtitle: `${quantity} ${measure_unit}`,
+          image_url,
+          price: price.toFixed(2),
+          currency: 'INR',
         };
       });
-      responseObject = constructCardResponse(productDetails);
+      const totalPrice = calculateTotalPrice(productDetails);
+      const userContext = await getUserDetails(request);
+      console.log('userContext ', userContext);
+      const { first_name: firstName, last_name: lastName } = userContext;
+      // responseObject = constructCardResponse(productDetails);
+      const receiptTemplate = {
+        type: 'template',
+        payload: {
+          template_type: 'receipt',
+          recipient_name: `${firstName} ${lastName}`,
+          order_number: `${transactionId}`,
+          currency: 'INR',
+          payment_method: 'Not Paid yet',
+          summary: {
+            total_cost: totalPrice.toFixed(2),
+          },
+          elements: productDetails,
+        },
+      };
+
       responseObject = {
         fulfillmentMessages: [
           {
             payload: {
               facebook: {
-                attachment: get(
-                  responseObject,
-                  'fulfillmentMessages[0].payload.facebook.attachment',
-                  {},
-                ),
+                attachment: receiptTemplate,
                 quick_replies: [
                   {
                     content_type: 'text',

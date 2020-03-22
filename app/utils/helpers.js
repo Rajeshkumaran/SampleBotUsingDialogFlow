@@ -47,7 +47,7 @@ export const addOrUpdateUser = async userContext => {
     console.log(e);
   }
 };
-const calculateTotalPrice = products => {
+export const calculateTotalPrice = products => {
   let totalPrice = 0;
   products.map(product => (totalPrice += parseInt(product.price, 10)));
   return totalPrice;
