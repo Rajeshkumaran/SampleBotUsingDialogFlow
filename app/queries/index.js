@@ -1,7 +1,7 @@
 import { postgreSqlConnection } from '../connectors/config';
 export const selectCartInfoUsingSessionId = sessionId =>
   postgreSqlConnection.query(
-    `select cart_info from transaction_info where session_id='${sessionId}' and is_active=true`,
+    `select cart_info,id from transaction_info where session_id='${sessionId}' and is_active=true`,
   );
 export const insertIntoTransactionInfo = ({
   id,

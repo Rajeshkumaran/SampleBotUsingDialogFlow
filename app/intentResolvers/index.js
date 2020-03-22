@@ -155,7 +155,11 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
         return;
       }
       let productDetails = await getProductsByProductName({ productName });
-      productDetails = productDetails.map(
+      const {
+        category_name: categoryName,
+        sub_category_name: subCategoryName,
+      } = productDetails[0];
+      const productsToBeAdded = productDetails.map(
         ({ name, price, measure_unit, image_url }) => ({
           product_name: name,
           price,
@@ -165,10 +169,10 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
         }),
       );
 
-      console.log('inside ADD_TO_CART_INTENT ', productDetails);
+      console.log('inside ADD_TO_CART_INTENT ', productsToBeAdded);
       const isItemAdded = await addToCart({
         userId,
-        productsToBeAdded: productDetails,
+        productsToBeAdded,
       });
       console.log('isItemAdded', isItemAdded);
       if (isItemAdded) {
@@ -177,17 +181,40 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
             {
               payload: {
                 facebook: {
-                  text: `Added to cart`,
-                  quick_replies: [
-                    {
-                      content_type: 'text',
-                      title: 'View Cart',
-                      payload: 'View Cart',
+                  attachment: {
+                    type: 'template',
+                    payload: {
+                      template_type: 'button',
+                      text: 'Added to cart',
+                      buttons: [
+                        {
+                          type: 'postback',
+                          payload: 'View Cart',
+                          title: 'View Cart',
+                        },
+                        {
+                          type: 'postback',
+                          payload: `show categories`,
+                          title: `See all categories`,
+                        },
+                      ],
                     },
+                  },
+                  quick_replies: [
                     {
                       content_type: 'text',
                       title: 'Place order',
                       payload: 'Place order',
+                    },
+                    {
+                      content_type: 'text',
+                      payload: `View products by ${subCategoryName}`,
+                      title: `See ${categoryName}`,
+                    },
+                    {
+                      content_type: 'text',
+                      payload: `View products by ${subCategoryName}`,
+                      title: `See ${subCategoryName}`,
                     },
                   ],
                 },
@@ -206,7 +233,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
     }
     case VIEW_CART_INTENT: {
       const cart = await selectCartInfoUsingSessionId(userId);
-      const transactionId = get(cart, 'id', 11111);
+      const transactionId = get(cart[0], 'id', 11111);
       let productDetails = get(cart[0], 'cart_info.product_details', []);
       console.log('cartInfo', userId, cart, productDetails);
 
