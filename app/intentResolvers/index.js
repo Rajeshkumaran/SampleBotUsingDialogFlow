@@ -17,6 +17,7 @@ import {
   VIEW_CART_INTENT,
   SHOW_CATEGORIES_INTENT,
   SHOW_SUB_CATEGORIES_INTENT,
+  SEARCH_PRODUCT_INTENT,
 } from '../utils/constants';
 import {
   selectCartInfoUsingSessionId,
@@ -71,6 +72,17 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
     case SHOW_CATEGORIES_INTENT: {
       const categories = await getAllCategories();
       responseObject = constructCardResponse(categories);
+      responseObject = {
+        fulfillmentMessages: [
+          ...responseObject.fulfillmentMessages,
+          {
+            text: {
+              text: ['You can also type what do you want'],
+            },
+            platform: 'FACEBOOK',
+          },
+        ],
+      };
       break;
     }
     case SHOW_SUB_CATEGORIES_INTENT: {
@@ -89,6 +101,47 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
         subCategoryName,
       });
       responseObject = constructCardResponse(products);
+      break;
+    }
+    case SEARCH_PRODUCT_INTENT: {
+      const { productName } = parameters;
+      console.log('SEARCH_PRODUCT_INTENT', parameters, productName);
+      let productDetails = await getProductsByProductName({ productName });
+      productDetails = productDetails.map(({ name, image_url, price }) => ({
+        title: name,
+        image_url,
+        subtitle: `Rs. ${price}`,
+      }));
+      responseObject = constructCardResponse(productDetails);
+      responseObject = {
+        fulfillmentMessages: [
+          {
+            payload: {
+              facebook: {
+                attachment: get(
+                  responseObject,
+                  'fulfillmentMessages[0].payload.facebook.attachment',
+                  {},
+                ),
+                quick_replies: [
+                  {
+                    content_type: 'text',
+                    title: 'Add this to cart',
+                    payload: `Add ${productName} to cart`,
+                  },
+                  {
+                    content_type: 'text',
+                    title: 'Not this ?',
+                    payload: 'Not this product',
+                  },
+                ],
+              },
+              platform: 'FACEBOOK',
+            },
+          },
+        ],
+      };
+      // responseObject = constructTextResponse('Yes ,product is available');
       break;
     }
     case ADD_TO_CART_INTENT: {
