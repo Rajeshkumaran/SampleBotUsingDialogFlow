@@ -25,6 +25,10 @@ import {
   getProductsByProductName,
 } from '../queries';
 
+const accountSid = 'AC7d29e187688e346f6c97295e1de38739';
+const authToken = '648838167e3c17783b2d934b8310fc29';
+const client = require('twilio')(accountSid, authToken);
+
 const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
   let responseObject = {};
   let userId = getUserIdFromRequest(request);
@@ -292,6 +296,18 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
         ],
       };
       break;
+    }
+    case PLACE_ORDER: {
+
+      client.messages
+        .create({
+          body: 'Welcome',
+          from: '+15017122661',
+          to: '+919677102277'
+        })
+        .then(message => console.log(message.sid));
+      responseObject = constructTextResponse('Thank you for shopping with us. Your order has been placed successfully.' + '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.');
+        break;
     }
     default: {
       responseObject = constructTextResponse('Pardon come again');

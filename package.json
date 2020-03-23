@@ -34,7 +34,8 @@
 		"mongodb": "^3.3.3",
 		"ngrok": "^3.2.7",
 		"pg": "*",
-		"postgresql-easy": "^1.2.5"
+		"postgresql-easy": "^1.2.5",
+		"twilio": "^3.41.1"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.8.7",
