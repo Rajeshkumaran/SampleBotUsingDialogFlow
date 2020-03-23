@@ -19,6 +19,7 @@ import {
   SHOW_CATEGORIES_INTENT,
   SHOW_SUB_CATEGORIES_INTENT,
   SEARCH_PRODUCT_INTENT,
+  PLACE_ORDER_INTENT
 } from '../utils/constants';
 import {
   selectCartInfoUsingSessionId,
@@ -297,7 +298,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       };
       break;
     }
-    case PLACE_ORDER: {
+    case PLACE_ORDER_INTENT: {
 
       client.messages
         .create({
