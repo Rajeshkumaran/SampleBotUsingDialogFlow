@@ -299,14 +299,14 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       break;
     }
     case PLACE_ORDER_INTENT: {
-
+      console.log('client', client);
       client.messages
         .create({
           body: 'Welcome',
           from: '+17818053520',
           to: '+919677102277'
         })
-        .then(message => console.log(message.sid));
+        .then(message => console.log('sent!'));
       responseObject = constructTextResponse('Thank you for shopping with us. Your order has been placed successfully.' + '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.');
         break;
     }
