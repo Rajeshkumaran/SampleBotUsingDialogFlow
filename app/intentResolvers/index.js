@@ -302,7 +302,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       console.log('client', client);
       client.messages
         .create({
-          body: 'Welcome',
+          body: 'New order received. Order No: 1, Customer name: Mr. Ganesh, Order amount: Rs.360, Delivery date: 24-03-2020',
           from: '+17818053520',
           to: '+919677102277'
         })
