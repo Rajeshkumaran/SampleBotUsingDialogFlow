@@ -27,7 +27,7 @@ import {
 } from '../queries';
 
 const accountSid = 'AC7d29e187688e346f6c97295e1de38739';
-const authToken = '648838167e3c17783b2d934b8310fc29';
+const authToken = '35870cd3d8cdcf375c9ab8e9e5cc6f15';
 const client = require('twilio')(accountSid, authToken);
 
 const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
