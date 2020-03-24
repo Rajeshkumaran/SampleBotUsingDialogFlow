@@ -19,7 +19,8 @@ import {
   SHOW_CATEGORIES_INTENT,
   SHOW_SUB_CATEGORIES_INTENT,
   SEARCH_PRODUCT_INTENT,
-  PLACE_ORDER_INTENT
+  PLACE_ORDER_INTENT,
+  RE_ORDER_INTENT
 } from '../utils/constants';
 import {
   selectCartInfoUsingSessionId,
@@ -295,6 +296,69 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
             },
           },
         ],
+      };
+      break;
+    }
+    case RE_ORDER_INTENT: {
+      const cart = await selectCartInfoUsingSessionId(userId);
+      const transactionId = get(cart[0], 'id', 11111);
+      let productDetails = get(cart[0], 'cart_info.product_details', []);
+      console.log('cartInfo', userId, cart, productDetails);
+
+      productDetails = productDetails.map(item => {
+        const { product_name, image_url, price, quantity, measure_unit } = item;
+        return {
+          title: product_name,
+          subtitle: `${quantity} ${measure_unit}`,
+          image_url,
+          price: price.toFixed(2),
+          currency: 'INR',
+        };
+      });
+      const totalPrice = calculateTotalPrice(productDetails);
+      const userContext = await getUserDetails(request);
+      console.log('userContext ', userContext);
+      const { first_name: firstName, last_name: lastName } = userContext;
+      // responseObject = constructCardResponse(productDetails);
+      const receiptTemplate = {
+        type: 'template',
+        payload: {
+          template_type: 'receipt',
+          recipient_name: `${firstName} ${lastName}`,
+          order_number: `${transactionId}`,
+          currency: 'INR',
+          payment_method: 'Not Paid yet',
+          summary: {
+            total_cost: totalPrice.toFixed(2),
+          },
+          elements: productDetails,
+        },
+      };
+
+      responseObject = {
+        fulfillmentMessages: [
+          {
+            payload: {
+              facebook: {
+                attachment: receiptTemplate,
+                quick_replies: [
+                  {
+                    content_type: 'text',
+                    title: 'Place order',
+                    payload: 'Place order',
+                  },
+                  {
+                    content_type: 'text',
+                    title: 'Add more products',
+                    payload: 'Show categories',
+                  },
+                ],
+              },
+              platform: 'FACEBOOK',
+            },
+          },
+        ],
+      
       };
       break;
     }

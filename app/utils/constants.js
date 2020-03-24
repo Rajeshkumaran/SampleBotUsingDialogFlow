@@ -6,4 +6,5 @@ export const ADD_TO_CART_INTENT = 'ADD_TO_CART';
 export const VIEW_CART_INTENT = 'VIEW_CART';
 export const SEARCH_PRODUCT_INTENT = 'SEARCH_PRODUCT';
 export const PLACE_ORDER_INTENT = 'PLACE_ORDER';
+export const RE_ORDER_INTENT='RE_ORDER';
 
