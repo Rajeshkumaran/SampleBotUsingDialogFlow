@@ -368,7 +368,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
         .create({
           body: 'New order received. Order No: 1, Customer name: Mr. Ganesh, Order amount: Rs.360, Delivery date: 24-03-2020',
           from: '+17818053520',
-          to: '+919677102277'
+          to: '+91 80956 11119'
         })
         .then(message => console.log('sent!'));
       responseObject = constructTextResponse('Thank you for shopping with us. Your order has been placed successfully.' + '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.');
