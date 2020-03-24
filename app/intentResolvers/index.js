@@ -10,6 +10,7 @@ import {
   get,
   getAllProducts,
   calculateTotalPrice,
+  sendEmail,
 } from '../utils/helpers';
 import {
   ADD_TO_CART_INTENT,
@@ -20,7 +21,7 @@ import {
   SHOW_SUB_CATEGORIES_INTENT,
   SEARCH_PRODUCT_INTENT,
   PLACE_ORDER_INTENT,
-  RE_ORDER_INTENT
+  RE_ORDER_INTENT,
 } from '../utils/constants';
 import {
   selectCartInfoUsingSessionId,
@@ -358,7 +359,6 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
             },
           },
         ],
-      
       };
       break;
     }
@@ -366,13 +366,19 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       console.log('client', client);
       client.messages
         .create({
-          body: 'New order received. Order No: 1, Customer name: Mr. Ganesh, Order amount: Rs.360, Delivery date: 24-03-2020',
+          body:
+            'New order received. Order No: 1, Customer name: Mr. Ganesh, Order amount: Rs.360, Delivery date: 24-03-2020',
           from: '+17818053520',
-          to: '+91 80956 11119'
+          to: '+91 80956 11119',
         })
         .then(message => console.log('sent!'));
-      responseObject = constructTextResponse('Thank you for shopping with us. Your order has been placed successfully.' + '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.');
-        break;
+      responseObject = constructTextResponse(
+        'Thank you for shopping with us. Your order has been placed successfully.' +
+          '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
+      );
+      const message = await sendEmail();
+      console.log('message', message);
+      break;
     }
     default: {
       responseObject = constructTextResponse('Pardon come again');

@@ -1,12 +1,14 @@
 import express from 'express';
 import config from './connectors/config';
 import resolveIntent from './intentResolvers';
+import { sendEmail } from './utils/helpers';
 var bodyParser = require('body-parser');
 const { port } = config;
 var app = express();
 app.use(bodyParser.json({ limit: '256kb' })); // parse application/json
 
 app.get('/', async (req, res) => {
+  await sendEmail();
   res.send('hello');
 });
 

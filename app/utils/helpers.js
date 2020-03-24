@@ -1,7 +1,12 @@
+import nodeMailer from 'nodemailer';
 import requestWrapper from './requestWrapper';
 import responseParser from './responseParser';
 import { USER_PROFILE_GRAPH_API_FB_ENDPOINT } from './urls';
-import { PAGE_ACCESS_TOKEN } from './credentials';
+import {
+  PAGE_ACCESS_TOKEN,
+  GMAIL_SENDER_CREDENTIALS,
+  GMAIL_RECIEVERS_LIST,
+} from './credentials';
 import { postgreSqlConnection } from '../connectors/config';
 import {
   insertIntoTransactionInfo,
@@ -494,4 +499,29 @@ export const getUserIdFromRequest = req => {
     senderId = get(senderInfo, 'payload.data.sender.id');
   }
   return senderId;
+};
+export const sendEmail = async () => {
+  const { username = null, password = null } = GMAIL_SENDER_CREDENTIALS;
+  const receivers = GMAIL_RECIEVERS_LIST.join(',');
+  if (username && password) {
+    let transporter = nodeMailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: username,
+        pass: password,
+      },
+    });
+    // please turn on allow less secure apps in your gmail setting
+    let info = await transporter.sendMail({
+      from: 'SupermarketBot', // sender address
+      to: `${receivers}`, // list of receivers
+      subject: 'Hello', // Subject line
+      text: 'Hello from supermarket bot', // plain text body
+    });
+
+    console.log('Email sent successfully');
+    return new Promise(resolve => {
+      resolve(info.messageId);
+    });
+  }
 };
