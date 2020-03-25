@@ -26,6 +26,7 @@ import {
   PLACE_ORDER_INTENT,
   REPEAT_PREVIOUS_ORDER_INTENT,
   SHOW_OLD_ORDER_INTENT,
+  SHOW_HOT_DEALS_INTENT,
 } from '../utils/constants';
 import {
   selectCartInfoUsingSessionId,
@@ -33,6 +34,7 @@ import {
   placeOrder,
   getPreviousOrderInfo,
   reorderQuery,
+  getHotDealsProducts,
 } from '../queries';
 
 // const accountSid = 'AC7d29e187688e346f6c97295e1de38739';
@@ -41,200 +43,325 @@ import {
 
 const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
   let responseObject = {};
-  let userId = getUserIdFromRequest(request);
+  try {
+    let userId = getUserIdFromRequest(request);
+    switch (intentName) {
+      case WELCOME_MESSAGE_INTENT: {
+        const userContext = await getUserDetails(request);
+        console.log('userContext -=> ' + userContext);
+        addOrUpdateUser(userContext);
+        let salutation = userContext.gender === 'male' ? 'Mr. ' : 'Ms. ';
+        const greetingMessage = `Hello ${salutation}${userContext.first_name}`;
+        const cart = await selectCartInfoUsingSessionId(userId);
 
-  switch (intentName) {
-    case WELCOME_MESSAGE_INTENT: {
-      const userContext = await getUserDetails(request);
-      console.log('userContext -=> ' + userContext);
-      addOrUpdateUser(userContext);
-      let salutation = userContext.gender === 'male' ? 'Mr. ' : 'Ms. ';
-      const greetingMessage = `Hello ${salutation}${userContext.first_name}`;
-      const cart = await selectCartInfoUsingSessionId(userId);
-
-      if (cart.length === 0) {
-        // new user don't have cart no need to previous order button
-        responseObject = constructCardResponse([
-          {
-            showCustomButtons: true,
-            title: 'Welcome to ABC supermarket',
-            image_url:
-              'https://lh3.googleusercontent.com/_0EOeOXx2WC-vkEwzhKHzhxeQjhgHIeHJKWljeUzAjos3QLfca8eWDCadZiBJ1mSY2hdx3lCaY8g6iUMDMQiz1b7T2ttpOkJSg=s750',
-            buttons: [
-              {
-                type: 'postback',
-                payload: 'View Categories',
-                title: 'Show Categories',
-              },
-            ],
-          },
-        ]);
-      } else {
-        responseObject = constructCardResponse([
-          {
-            showCustomButtons: true,
-            title: 'Welcome to ABC supermarket',
-            image_url:
-              'https://lh3.googleusercontent.com/_0EOeOXx2WC-vkEwzhKHzhxeQjhgHIeHJKWljeUzAjos3QLfca8eWDCadZiBJ1mSY2hdx3lCaY8g6iUMDMQiz1b7T2ttpOkJSg=s750',
-            buttons: [
-              {
-                type: 'postback',
-                payload: 'View Categories',
-                title: 'Show Categories',
-              },
-              {
-                type: 'postback',
-                payload: 'Show previous order',
-                title: 'Show previous order',
-              },
-            ],
-          },
-        ]);
-      }
-
-      responseObject = {
-        fulfillmentMessages: [
-          {
-            text: {
-              text: [greetingMessage],
+        if (cart.length === 0) {
+          // new user don't have cart no need to previous order button
+          responseObject = constructCardResponse([
+            {
+              showCustomButtons: true,
+              title: 'Welcome to ABC supermarket',
+              image_url:
+                'https://lh3.googleusercontent.com/_0EOeOXx2WC-vkEwzhKHzhxeQjhgHIeHJKWljeUzAjos3QLfca8eWDCadZiBJ1mSY2hdx3lCaY8g6iUMDMQiz1b7T2ttpOkJSg=s750',
+              buttons: [
+                {
+                  type: 'postback',
+                  payload: 'View Categories',
+                  title: 'Show Categories',
+                },
+                {
+                  type: 'postback',
+                  payload: 'Show hot deals',
+                  title: 'Hot Deals',
+                },
+              ],
             },
-            platform: 'FACEBOOK',
-          },
-          ...responseObject.fulfillmentMessages,
-        ],
-      };
-      break;
-    }
-    case SHOW_CATEGORIES_INTENT: {
-      const categories = await getAllCategories();
-      responseObject = constructCardResponse(categories);
-      responseObject = {
-        fulfillmentMessages: [
-          ...responseObject.fulfillmentMessages,
-          // {
-          //   text: {
-          //     text: ['You can also type what do you want'],
-          //   },
-          //   platform: 'FACEBOOK',
-          // },
-        ],
-      };
-      break;
-    }
-    case SHOW_SUB_CATEGORIES_INTENT: {
-      const { categoryName } = parameters;
-      const subCategories = await getAllSubCategories({
-        categoryName,
-      });
-      responseObject = constructCardResponse(subCategories);
-      break;
-    }
+          ]);
+        } else {
+          responseObject = constructCardResponse([
+            {
+              showCustomButtons: true,
+              title: 'Welcome to ABC supermarket',
+              image_url:
+                'https://lh3.googleusercontent.com/_0EOeOXx2WC-vkEwzhKHzhxeQjhgHIeHJKWljeUzAjos3QLfca8eWDCadZiBJ1mSY2hdx3lCaY8g6iUMDMQiz1b7T2ttpOkJSg=s750',
+              buttons: [
+                {
+                  type: 'postback',
+                  payload: 'View Categories',
+                  title: 'Show Categories',
+                },
+                {
+                  type: 'postback',
+                  payload: 'Show hot deals',
+                  title: 'HOT Deals',
+                },
+                {
+                  type: 'postback',
+                  payload: 'Show previous order',
+                  title: 'Show previous order',
+                },
+              ],
+            },
+          ]);
+        }
 
-    case VIEW_PRODUCT_INTENT: {
-      const { categoryName = null, subCategoryName = null } = parameters;
-      const products = await getAllProducts({
-        categoryName,
-        subCategoryName,
-      });
-      responseObject = constructCardResponse(products);
-      break;
-    }
-    case SEARCH_PRODUCT_INTENT: {
-      const { productName } = parameters;
-      console.log('SEARCH_PRODUCT_INTENT', parameters, productName);
-      let productDetails = await getProductsByProductName({ productName });
-      productDetails = productDetails.map(({ name, image_url, price }) => ({
-        title: name,
-        image_url,
-        subtitle: `Rs. ${price}`,
-      }));
-      responseObject = constructCardResponse(productDetails);
-      responseObject = {
-        fulfillmentMessages: [
-          {
-            payload: {
-              facebook: {
-                attachment: get(
-                  responseObject,
-                  'fulfillmentMessages[0].payload.facebook.attachment',
-                  {},
-                ),
-                quick_replies: [
-                  {
-                    content_type: 'text',
-                    title: 'Add this to cart',
-                    payload: `Add ${productName} to cart`,
-                  },
-                  {
-                    content_type: 'text',
-                    title: 'Not this ?',
-                    payload: 'Not this product',
-                  },
-                ],
+        responseObject = {
+          fulfillmentMessages: [
+            {
+              text: {
+                text: [greetingMessage],
               },
               platform: 'FACEBOOK',
             },
-          },
-        ],
-      };
-      // responseObject = constructTextResponse('Yes ,product is available');
-      break;
-    }
-    case ADD_TO_CART_INTENT: {
-      const { productName } = parameters;
-      if (!productName) {
-        // if particular product is available on search
-        responseObject = constructTextResponse(
-          `Sorry,currently we don't have that product`,
-        );
-        return;
+            ...responseObject.fulfillmentMessages,
+          ],
+        };
+        break;
       }
-      let productDetails = await getProductsByProductName({ productName });
-      const {
-        category_name: categoryName,
-        sub_category_name: subCategoryName,
-      } = productDetails[0];
-      const productsToBeAdded = productDetails.map(
-        ({ name, price, measure_unit, image_url }) => ({
-          product_name: name,
-          price,
-          quantity: 1,
-          measure_unit,
+      case SHOW_CATEGORIES_INTENT: {
+        const categories = await getAllCategories();
+        responseObject = constructCardResponse(categories);
+        responseObject = {
+          fulfillmentMessages: [
+            ...responseObject.fulfillmentMessages,
+            // {
+            //   text: {
+            //     text: ['You can also type what do you want'],
+            //   },
+            //   platform: 'FACEBOOK',
+            // },
+          ],
+        };
+        break;
+      }
+      case SHOW_SUB_CATEGORIES_INTENT: {
+        const { categoryName } = parameters;
+        const subCategories = await getAllSubCategories({
+          categoryName,
+        });
+        responseObject = constructCardResponse(subCategories);
+        break;
+      }
+      case SHOW_HOT_DEALS_INTENT: {
+        let productDetails = await getHotDealsProducts();
+        productDetails = productDetails.map(({ name, image_url, price }) => ({
+          title: name,
           image_url,
-        }),
-      );
-
-      console.log('inside ADD_TO_CART_INTENT ', productsToBeAdded);
-      const isItemAdded = await addToCart({
-        userId,
-        productsToBeAdded,
-      });
-      console.log('isItemAdded', isItemAdded);
-      if (isItemAdded) {
+          subtitle: `Rs. ${price}`,
+          showCustomButtons: true,
+          buttons: [
+            {
+              title: 'Add to cart',
+              type: 'postback',
+              payload: `Add ${name} to cart`,
+            },
+          ],
+        }));
+        responseObject = constructCardResponse(productDetails);
         responseObject = {
           fulfillmentMessages: [
             {
               payload: {
                 facebook: {
-                  attachment: {
-                    type: 'template',
-                    payload: {
-                      template_type: 'button',
-                      text: 'Added to cart',
-                      buttons: [
-                        {
-                          type: 'postback',
-                          payload: 'View Cart',
-                          title: 'View Cart',
-                        },
-                        {
-                          type: 'postback',
-                          payload: `show categories`,
-                          title: `See all categories`,
-                        },
-                      ],
+                  attachment: get(
+                    responseObject,
+                    'fulfillmentMessages[0].payload.facebook.attachment',
+                    {},
+                  ),
+                },
+                platform: 'FACEBOOK',
+              },
+            },
+          ],
+        };
+        break;
+      }
+      case VIEW_PRODUCT_INTENT: {
+        const { categoryName = null, subCategoryName = null } = parameters;
+        const products = await getAllProducts({
+          categoryName,
+          subCategoryName,
+        });
+        responseObject = constructCardResponse(products);
+        break;
+      }
+      case SEARCH_PRODUCT_INTENT: {
+        const { productName } = parameters;
+        console.log('SEARCH_PRODUCT_INTENT', parameters, productName);
+        let productDetails = await getProductsByProductName({ productName });
+        productDetails = productDetails.map(({ name, image_url, price }) => ({
+          title: name,
+          image_url,
+          subtitle: `Rs. ${price}`,
+        }));
+        responseObject = constructCardResponse(productDetails);
+        responseObject = {
+          fulfillmentMessages: [
+            {
+              payload: {
+                facebook: {
+                  attachment: get(
+                    responseObject,
+                    'fulfillmentMessages[0].payload.facebook.attachment',
+                    {},
+                  ),
+                  quick_replies: [
+                    {
+                      content_type: 'text',
+                      title: 'Add this to cart',
+                      payload: `Add ${productName} to cart`,
                     },
+                    {
+                      content_type: 'text',
+                      title: 'Not this ?',
+                      payload: 'Not this product',
+                    },
+                  ],
+                },
+                platform: 'FACEBOOK',
+              },
+            },
+          ],
+        };
+        // responseObject = constructTextResponse('Yes ,product is available');
+        break;
+      }
+      case ADD_TO_CART_INTENT: {
+        const { productName } = parameters;
+        if (!productName) {
+          // if particular product is available on search
+          responseObject = constructTextResponse(
+            `Sorry,currently we don't have that product`,
+          );
+          return;
+        }
+        let productDetails = await getProductsByProductName({ productName });
+        const {
+          category_name: categoryName,
+          sub_category_name: subCategoryName,
+        } = productDetails[0];
+        const productsToBeAdded = productDetails.map(
+          ({ name, price, measure_unit, image_url }) => ({
+            product_name: name,
+            price,
+            quantity: 1,
+            measure_unit,
+            image_url,
+          }),
+        );
+
+        console.log('inside ADD_TO_CART_INTENT ', productsToBeAdded);
+        const isItemAdded = await addToCart({
+          userId,
+          productsToBeAdded,
+        });
+        console.log('isItemAdded', isItemAdded);
+        if (isItemAdded) {
+          responseObject = {
+            fulfillmentMessages: [
+              {
+                payload: {
+                  facebook: {
+                    attachment: {
+                      type: 'template',
+                      payload: {
+                        template_type: 'button',
+                        text: 'Added to cart',
+                        buttons: [
+                          {
+                            type: 'postback',
+                            payload: 'View Cart',
+                            title: 'View Cart',
+                          },
+                          {
+                            type: 'postback',
+                            payload: `show categories`,
+                            title: `See all categories`,
+                          },
+                        ],
+                      },
+                    },
+                    quick_replies: [
+                      {
+                        content_type: 'text',
+                        title: 'Place order',
+                        payload: 'Place order',
+                      },
+                      {
+                        content_type: 'text',
+                        payload: `View products by ${subCategoryName}`,
+                        title: `See ${categoryName}`,
+                      },
+                      {
+                        content_type: 'text',
+                        payload: `View products by ${subCategoryName}`,
+                        title: `See ${subCategoryName}`,
+                      },
+                    ],
                   },
+                  platform: 'FACEBOOK',
+                },
+              },
+            ],
+          };
+
+          console.log('add to cart success', responseObject);
+        } else
+          responseObject = constructTextResponse(
+            'Something went wrong ,please add again',
+          );
+        break;
+      }
+      case VIEW_CART_INTENT: {
+        const cart = await selectCartInfoUsingSessionId(userId);
+        const transactionId = get(cart[0], 'id', 11111);
+        let productDetails = get(cart[0], 'cart_info.product_details', []);
+        if (cart.length === 0) {
+          // no cart for user
+          responseObject = emptyCartFallbackResponse();
+          break;
+        }
+        productDetails = productDetails.map(item => {
+          const {
+            product_name,
+            image_url,
+            price,
+            quantity,
+            measure_unit,
+          } = item;
+          return {
+            title: product_name,
+            subtitle: `${quantity} ${measure_unit}`,
+            image_url,
+            price: price.toFixed(2),
+            currency: 'INR',
+          };
+        });
+        const totalPrice = calculateTotalPrice(productDetails);
+        const userContext = await getUserDetails(request);
+        console.log('userContext ', userContext);
+        const { first_name: firstName, last_name: lastName } = userContext;
+        // responseObject = constructCardResponse(productDetails);
+        const receiptTemplate = {
+          type: 'template',
+          payload: {
+            template_type: 'receipt',
+            recipient_name: `${firstName} ${lastName}`,
+            order_number: `${transactionId}`,
+            currency: 'INR',
+            payment_method: 'Not Paid yet',
+            summary: {
+              total_cost: totalPrice.toFixed(2),
+            },
+            elements: productDetails,
+          },
+        };
+
+        responseObject = {
+          fulfillmentMessages: [
+            {
+              payload: {
+                facebook: {
+                  attachment: receiptTemplate,
                   quick_replies: [
                     {
                       content_type: 'text',
@@ -243,13 +370,84 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
                     },
                     {
                       content_type: 'text',
-                      payload: `View products by ${subCategoryName}`,
-                      title: `See ${categoryName}`,
+                      title: 'Add more products',
+                      payload: 'Show categories',
+                    },
+                  ],
+                },
+                platform: 'FACEBOOK',
+              },
+            },
+          ],
+        };
+        break;
+      }
+      case SHOW_OLD_ORDER_INTENT: {
+        const cart = await getPreviousOrderInfo(userId);
+        if (cart.length === 0) {
+          const customText = "Sorry,you don't have any history of order";
+          responseObject = emptyCartFallbackResponse(customText);
+          break;
+        }
+        const transactionId = get(cart[0], 'id', '11111');
+        let productDetails = get(cart[0], 'cart_info.product_details', []);
+        productDetails = productDetails.map(item => {
+          const {
+            product_name,
+            image_url,
+            price,
+            quantity,
+            measure_unit,
+          } = item;
+          return {
+            title: product_name,
+            subtitle: `${quantity} ${measure_unit}`,
+            image_url,
+            price: price.toFixed(2),
+            currency: 'INR',
+          };
+        });
+        const totalPrice = calculateTotalPrice(productDetails);
+        let orderPlacedOn = get(cart[0], 'updated_at', null);
+        orderPlacedOn = orderPlacedOn
+          ? new Date(orderPlacedOn).getTime() / 1000
+          : null;
+
+        const userContext = await getUserDetails(request);
+        const { first_name: firstName, last_name: lastName } = userContext;
+        responseObject = constructCardResponse(productDetails);
+        const receiptTemplate = {
+          type: 'template',
+          payload: {
+            template_type: 'receipt',
+            recipient_name: `${firstName} ${lastName}`,
+            order_number: `${transactionId}`,
+            currency: 'INR',
+            payment_method: 'Not Paid yet',
+            ...(orderPlacedOn && { timestamp: orderPlacedOn }),
+            summary: {
+              total_cost: totalPrice.toFixed(2),
+            },
+            elements: productDetails,
+          },
+        };
+
+        responseObject = {
+          fulfillmentMessages: [
+            {
+              payload: {
+                facebook: {
+                  attachment: receiptTemplate,
+                  quick_replies: [
+                    {
+                      content_type: 'text',
+                      title: 'Repeat this order',
+                      payload: `Repeat previous order`,
                     },
                     {
                       content_type: 'text',
-                      payload: `View products by ${subCategoryName}`,
-                      title: `See ${subCategoryName}`,
+                      title: 'Show categories',
+                      payload: 'Show categories',
                     },
                   ],
                 },
@@ -259,220 +457,83 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
           ],
         };
 
-        console.log('add to cart success', responseObject);
-      } else
+        break;
+      }
+      case REPEAT_PREVIOUS_ORDER_INTENT: {
+        const previousCartDetails = await getPreviousOrderInfo(userId);
+        if (previousCartDetails.length === 0) {
+          responseObject = emptyCartFallbackResponse(
+            `Sorry,you don't have any history of order`,
+          );
+          break;
+        }
+        const currentCart = await selectCartInfoUsingSessionId(userId);
+        const currentTransactionId = get(currentCart[0], 'id', '11111');
+        console.log(
+          'currentTransactionId',
+          currentTransactionId,
+          currentCart,
+          previousCartDetails,
+        );
+
+        const previousCartInfo = {
+          product_details: get(
+            previousCartDetails[0],
+            'cart_info.product_details',
+            [],
+          ),
+        };
+        await reorderQuery({
+          userId,
+          cartInfo: previousCartInfo,
+        });
+
+        const id = createTransactionId();
+        await createEmptyCart({
+          userId,
+          previousTransactionId: currentTransactionId,
+          newTransactionId: id,
+        });
         responseObject = constructTextResponse(
-          'Something went wrong ,please add again',
+          'Thank you for shopping with us. Your order has been placed successfully.' +
+            '\n\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
         );
-      break;
-    }
-    case VIEW_CART_INTENT: {
-      const cart = await selectCartInfoUsingSessionId(userId);
-      const transactionId = get(cart[0], 'id', 11111);
-      let productDetails = get(cart[0], 'cart_info.product_details', []);
-      if (cart.length === 0) {
-        // no cart for user
-        responseObject = emptyCartFallbackResponse();
+
         break;
       }
-      productDetails = productDetails.map(item => {
-        const { product_name, image_url, price, quantity, measure_unit } = item;
-        return {
-          title: product_name,
-          subtitle: `${quantity} ${measure_unit}`,
-          image_url,
-          price: price.toFixed(2),
-          currency: 'INR',
-        };
-      });
-      const totalPrice = calculateTotalPrice(productDetails);
-      const userContext = await getUserDetails(request);
-      console.log('userContext ', userContext);
-      const { first_name: firstName, last_name: lastName } = userContext;
-      // responseObject = constructCardResponse(productDetails);
-      const receiptTemplate = {
-        type: 'template',
-        payload: {
-          template_type: 'receipt',
-          recipient_name: `${firstName} ${lastName}`,
-          order_number: `${transactionId}`,
-          currency: 'INR',
-          payment_method: 'Not Paid yet',
-          summary: {
-            total_cost: totalPrice.toFixed(2),
-          },
-          elements: productDetails,
-        },
-      };
-
-      responseObject = {
-        fulfillmentMessages: [
-          {
-            payload: {
-              facebook: {
-                attachment: receiptTemplate,
-                quick_replies: [
-                  {
-                    content_type: 'text',
-                    title: 'Place order',
-                    payload: 'Place order',
-                  },
-                  {
-                    content_type: 'text',
-                    title: 'Add more products',
-                    payload: 'Show categories',
-                  },
-                ],
-              },
-              platform: 'FACEBOOK',
-            },
-          },
-        ],
-      };
-      break;
-    }
-    case SHOW_OLD_ORDER_INTENT: {
-      const cart = await getPreviousOrderInfo(userId);
-      if (cart.length === 0) {
-        const customText = "Sorry,you don't have any history of order";
-        responseObject = emptyCartFallbackResponse(customText);
-        break;
-      }
-      const transactionId = get(cart[0], 'id', '11111');
-      let productDetails = get(cart[0], 'cart_info.product_details', []);
-      productDetails = productDetails.map(item => {
-        const { product_name, image_url, price, quantity, measure_unit } = item;
-        return {
-          title: product_name,
-          subtitle: `${quantity} ${measure_unit}`,
-          image_url,
-          price: price.toFixed(2),
-          currency: 'INR',
-        };
-      });
-      const totalPrice = calculateTotalPrice(productDetails);
-      let orderPlacedOn = get(cart[0], 'updated_at', null);
-      orderPlacedOn = orderPlacedOn
-        ? new Date(orderPlacedOn).getTime() / 1000
-        : null;
-
-      const userContext = await getUserDetails(request);
-      const { first_name: firstName, last_name: lastName } = userContext;
-      responseObject = constructCardResponse(productDetails);
-      const receiptTemplate = {
-        type: 'template',
-        payload: {
-          template_type: 'receipt',
-          recipient_name: `${firstName} ${lastName}`,
-          order_number: `${transactionId}`,
-          currency: 'INR',
-          payment_method: 'Not Paid yet',
-          ...(orderPlacedOn && { timestamp: orderPlacedOn }),
-          summary: {
-            total_cost: totalPrice.toFixed(2),
-          },
-          elements: productDetails,
-        },
-      };
-
-      responseObject = {
-        fulfillmentMessages: [
-          {
-            payload: {
-              facebook: {
-                attachment: receiptTemplate,
-                quick_replies: [
-                  {
-                    content_type: 'text',
-                    title: 'Repeat this order',
-                    payload: `Repeat previous order`,
-                  },
-                  {
-                    content_type: 'text',
-                    title: 'Show categories',
-                    payload: 'Show categories',
-                  },
-                ],
-              },
-              platform: 'FACEBOOK',
-            },
-          },
-        ],
-      };
-
-      break;
-    }
-    case REPEAT_PREVIOUS_ORDER_INTENT: {
-      const previousCartDetails = await getPreviousOrderInfo(userId);
-      if (previousCartDetails.length === 0) {
-        responseObject = emptyCartFallbackResponse(
-          `Sorry,you don't have any history of order`,
+      case PLACE_ORDER_INTENT: {
+        const cart = await selectCartInfoUsingSessionId(userId);
+        const currentTransactionId = get(cart[0], 'id', 11111);
+        await placeOrder(currentTransactionId);
+        const id = createTransactionId();
+        await createEmptyCart({
+          userId,
+          previousTransactionId: currentTransactionId,
+          newTransactionId: id,
+        });
+        // client.messages
+        //   .create({
+        //     body:
+        //       'New order received. Order No: 1, Customer name: Mr. Ganesh, Order amount: Rs.360, Delivery date: 24-03-2020',
+        //     from: '+17818053520',
+        //     to: '+91 80956 11119',
+        //   })
+        //   .then(message => console.log('sent!'));
+        responseObject = constructTextResponse(
+          'Thank you for shopping with us. Your order has been placed successfully.' +
+            '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
         );
+        // const message = await sendEmail();
+        // console.log('message', message);
         break;
       }
-      const currentCart = await selectCartInfoUsingSessionId(userId);
-      const currentTransactionId = get(currentCart[0], 'id', '11111');
-      console.log(
-        'currentTransactionId',
-        currentTransactionId,
-        currentCart,
-        previousCartDetails,
-      );
-
-      const previousCartInfo = {
-        product_details: get(
-          previousCartDetails[0],
-          'cart_info.product_details',
-          [],
-        ),
-      };
-      await reorderQuery({
-        userId,
-        cartInfo: previousCartInfo,
-      });
-
-      const id = createTransactionId();
-      await createEmptyCart({
-        userId,
-        previousTransactionId: currentTransactionId,
-        newTransactionId: id,
-      });
-      responseObject = constructTextResponse(
-        'Thank you for shopping with us. Your order has been placed successfully.' +
-          '\n\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
-      );
-
-      break;
+      default: {
+        responseObject = constructTextResponse('Pardon come again');
+      }
     }
-    case PLACE_ORDER_INTENT: {
-      const cart = await selectCartInfoUsingSessionId(userId);
-      const currentTransactionId = get(cart[0], 'id', 11111);
-      await placeOrder(currentTransactionId);
-      const id = createTransactionId();
-      await createEmptyCart({
-        userId,
-        previousTransactionId: currentTransactionId,
-        newTransactionId: id,
-      });
-      // client.messages
-      //   .create({
-      //     body:
-      //       'New order received. Order No: 1, Customer name: Mr. Ganesh, Order amount: Rs.360, Delivery date: 24-03-2020',
-      //     from: '+17818053520',
-      //     to: '+91 80956 11119',
-      //   })
-      //   .then(message => console.log('sent!'));
-      responseObject = constructTextResponse(
-        'Thank you for shopping with us. Your order has been placed successfully.' +
-          '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
-      );
-      // const message = await sendEmail();
-      // console.log('message', message);
-      break;
-    }
-    default: {
-      responseObject = constructTextResponse('Pardon come again');
-    }
+  } catch (err) {
+    console.log('Caught error :', err);
+    responseObject = constructTextResponse('Oops,something went wrong');
   }
   return responseObject;
 };

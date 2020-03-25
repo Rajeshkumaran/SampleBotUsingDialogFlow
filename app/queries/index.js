@@ -57,3 +57,5 @@ export const reorderQuery = ({ userId, cartInfo }) =>
       cartInfo,
     )}' where id=(select id from transaction_info where is_active=true and session_id='${userId}');`,
   );
+export const getHotDealsProducts = () =>
+  postgreSqlConnection.query(`select * from products where is_hot_deal='true'`);
