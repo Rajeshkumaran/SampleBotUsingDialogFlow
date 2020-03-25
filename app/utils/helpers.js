@@ -132,8 +132,7 @@ export const addToCart = async ({ userId = null, productsToBeAdded }) => {
       // else create a new cart and make it as active
       console.log('add to cart helper -> new cart creation');
 
-      var min = 100000;
-      const id = (Math.random() * min + min).toFixed(0);
+      const id = createTransactionId();
       const totalPrice = calculateTotalPrice(productsToBeAdded);
 
       const transactionObject = {
@@ -151,6 +150,78 @@ export const addToCart = async ({ userId = null, productsToBeAdded }) => {
   } catch (err) {
     console.log('error inside add to cart helper', err);
   }
+};
+export const getAllCategories = async () => {
+  console.log('session ---> ', sessionId);
+
+  let categories = await getCategories();
+  const formattedCategories = categories.map(category => {
+    return {
+      title: category.name,
+      image_url: category.image_url,
+      showCustomButtons: true,
+      buttons: [
+        {
+          type: 'postback',
+          payload: `View Subcategories by ${category.name}`,
+          title: 'View Subcategories',
+        },
+        {
+          type: 'postback',
+          payload: `View Products by ${category.name}`,
+          title: 'View Products',
+        },
+      ],
+    };
+  });
+  return formattedCategories;
+};
+export const getAllSubCategories = async ({ categoryName = '' }) => {
+  console.log('session ---> ', sessionId);
+
+  let subCategories = await getSubCategoriesByCategories({ categoryName });
+  console.log('categories ----> ', JSON.stringify(subCategories));
+  const formattedSubCategories = subCategories.map(subCategory => {
+    return {
+      title: subCategory.name,
+      image_url: subCategory.image_url,
+      showCustomButtons: true,
+      buttons: [
+        {
+          type: 'postback',
+          payload: `View Products by ${subCategory.name}`,
+          title: 'View Products',
+        },
+      ],
+    };
+  });
+  return formattedSubCategories;
+};
+export const getAllProducts = async ({
+  categoryName = '',
+  subCategoryName = '',
+}) => {
+  let products = [];
+  if (categoryName) {
+    products = await getProductsByCategories({ categoryName });
+  } else if (subCategoryName) {
+    products = await getProductsBySubCategories({ subCategoryName });
+  }
+  const formattedProducts = products.map(product => {
+    return {
+      title: product.name,
+      image_url: product.image_url,
+      showCustomButtons: true,
+      buttons: [
+        {
+          type: 'postback',
+          payload: `Add ${product.name} to cart`,
+          title: 'Add to cart',
+        },
+      ],
+    };
+  });
+  return formattedProducts;
 };
 export const constructTextResponse = textResponse => {
   const response = {
@@ -228,79 +299,6 @@ export function constructCardResponse(cards) {
   };
   return response;
 }
-export const getAllCategories = async () => {
-  console.log('session ---> ', sessionId);
-
-  let categories = await getCategories();
-  const formattedCategories = categories.map(category => {
-    return {
-      title: category.name,
-      image_url: category.image_url,
-      showCustomButtons: true,
-      buttons: [
-        {
-          type: 'postback',
-          payload: `View Subcategories by ${category.name}`,
-          title: 'View Subcategories',
-        },
-        {
-          type: 'postback',
-          payload: `View Products by ${category.name}`,
-          title: 'View Products',
-        },
-      ],
-    };
-  });
-  return formattedCategories;
-};
-export const getAllSubCategories = async ({ categoryName = '' }) => {
-  console.log('session ---> ', sessionId);
-
-  let subCategories = await getSubCategoriesByCategories({ categoryName });
-  console.log('categories ----> ', JSON.stringify(subCategories));
-  const formattedSubCategories = subCategories.map(subCategory => {
-    return {
-      title: subCategory.name,
-      image_url: subCategory.image_url,
-      showCustomButtons: true,
-      buttons: [
-        {
-          type: 'postback',
-          payload: `View Products by ${subCategory.name}`,
-          title: 'View Products',
-        },
-      ],
-    };
-  });
-  return formattedSubCategories;
-};
-export const getAllProducts = async ({
-  categoryName = '',
-  subCategoryName = '',
-}) => {
-  let products = [];
-  if (categoryName) {
-    products = await getProductsByCategories({ categoryName });
-  } else if (subCategoryName) {
-    products = await getProductsBySubCategories({ subCategoryName });
-  }
-  const formattedProducts = products.map(product => {
-    return {
-      title: product.name,
-      image_url: product.image_url,
-      showCustomButtons: true,
-      buttons: [
-        {
-          type: 'postback',
-          payload: `Add ${product.name} to cart`,
-          title: 'Add to cart',
-        },
-      ],
-    };
-  });
-  return formattedProducts;
-};
-
 export const get = (from, selector, defaultVal) => {
   const value = selector
     .replace(/\[([^[\]]*)\]/g, '.$1.')
@@ -381,6 +379,32 @@ export const createEmptyCart = async ({
     },
     previousOrderId: previousTransactionId,
   };
-  const isCreated = await insertIntoTransactionInfo(transactionObject); // creating a new cart with previous order id
+  await insertIntoTransactionInfo(transactionObject); // creating a new cart with previous order id
   return true;
+};
+export const createTransactionId = () => {
+  const min = 100000;
+  const transactionId = (Math.random() * min + min).toFixed(0);
+  return transactionId;
+};
+export const emptyCartFallbackResponse = (customText = null) => {
+  return {
+    fulfillmentMessages: [
+      {
+        payload: {
+          facebook: {
+            text: customText ? customText : `Sorry,you don't have any cart`,
+            quick_replies: [
+              {
+                content_type: 'text',
+                title: 'See categories',
+                payload: 'Show categories',
+              },
+            ],
+          },
+          platform: 'FACEBOOK',
+        },
+      },
+    ],
+  };
 };

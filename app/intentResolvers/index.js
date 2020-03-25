@@ -10,8 +10,10 @@ import {
   get,
   getAllProducts,
   calculateTotalPrice,
-  sendEmail,
+  // sendEmail,
   createEmptyCart,
+  createTransactionId,
+  emptyCartFallbackResponse,
 } from '../utils/helpers';
 import {
   ADD_TO_CART_INTENT,
@@ -29,14 +31,13 @@ import {
   selectCartInfoUsingSessionId,
   getProductsByProductName,
   placeOrder,
-  insertIntoTransactionInfo,
   getPreviousOrderInfo,
   reorderQuery,
 } from '../queries';
 
-const accountSid = 'AC7d29e187688e346f6c97295e1de38739';
-const authToken = '35870cd3d8cdcf375c9ab8e9e5cc6f15';
-const client = require('twilio')(accountSid, authToken);
+// const accountSid = 'AC7d29e187688e346f6c97295e1de38739';
+// const authToken = '35870cd3d8cdcf375c9ab8e9e5cc6f15';
+// const client = require('twilio')(accountSid, authToken);
 
 const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
   let responseObject = {};
@@ -44,32 +45,53 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
 
   switch (intentName) {
     case WELCOME_MESSAGE_INTENT: {
-      console.log('inside welcome message');
       const userContext = await getUserDetails(request);
       console.log('userContext -=> ' + userContext);
       addOrUpdateUser(userContext);
       let salutation = userContext.gender === 'male' ? 'Mr. ' : 'Ms. ';
       const greetingMessage = `Hello ${salutation}${userContext.first_name}`;
-      responseObject = constructCardResponse([
-        {
-          showCustomButtons: true,
-          title: 'Welcome to ABC supermarket',
-          image_url:
-            'https://lh3.googleusercontent.com/_0EOeOXx2WC-vkEwzhKHzhxeQjhgHIeHJKWljeUzAjos3QLfca8eWDCadZiBJ1mSY2hdx3lCaY8g6iUMDMQiz1b7T2ttpOkJSg=s750',
-          buttons: [
-            {
-              type: 'postback',
-              payload: 'View Categories',
-              title: 'Show Categories',
-            },
-            {
-              type: 'postback',
-              payload: 'Show previous order',
-              title: 'Show previous order',
-            },
-          ],
-        },
-      ]);
+      const cart = await selectCartInfoUsingSessionId(userId);
+
+      if (cart.length === 0) {
+        // new user don't have cart no need to previous order button
+        responseObject = constructCardResponse([
+          {
+            showCustomButtons: true,
+            title: 'Welcome to ABC supermarket',
+            image_url:
+              'https://lh3.googleusercontent.com/_0EOeOXx2WC-vkEwzhKHzhxeQjhgHIeHJKWljeUzAjos3QLfca8eWDCadZiBJ1mSY2hdx3lCaY8g6iUMDMQiz1b7T2ttpOkJSg=s750',
+            buttons: [
+              {
+                type: 'postback',
+                payload: 'View Categories',
+                title: 'Show Categories',
+              },
+            ],
+          },
+        ]);
+      } else {
+        responseObject = constructCardResponse([
+          {
+            showCustomButtons: true,
+            title: 'Welcome to ABC supermarket',
+            image_url:
+              'https://lh3.googleusercontent.com/_0EOeOXx2WC-vkEwzhKHzhxeQjhgHIeHJKWljeUzAjos3QLfca8eWDCadZiBJ1mSY2hdx3lCaY8g6iUMDMQiz1b7T2ttpOkJSg=s750',
+            buttons: [
+              {
+                type: 'postback',
+                payload: 'View Categories',
+                title: 'Show Categories',
+              },
+              {
+                type: 'postback',
+                payload: 'Show previous order',
+                title: 'Show previous order',
+              },
+            ],
+          },
+        ]);
+      }
+
       responseObject = {
         fulfillmentMessages: [
           {
@@ -89,12 +111,12 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       responseObject = {
         fulfillmentMessages: [
           ...responseObject.fulfillmentMessages,
-          {
-            text: {
-              text: ['You can also type what do you want'],
-            },
-            platform: 'FACEBOOK',
-          },
+          // {
+          //   text: {
+          //     text: ['You can also type what do you want'],
+          //   },
+          //   platform: 'FACEBOOK',
+          // },
         ],
       };
       break;
@@ -248,27 +270,9 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       const cart = await selectCartInfoUsingSessionId(userId);
       const transactionId = get(cart[0], 'id', 11111);
       let productDetails = get(cart[0], 'cart_info.product_details', []);
-      console.log('cartInfo', userId, cart, productDetails);
       if (cart.length === 0) {
-        responseObject = {
-          fulfillmentMessages: [
-            {
-              payload: {
-                facebook: {
-                  text: `Sorry,you don't have any cart`,
-                  quick_replies: [
-                    {
-                      content_type: 'text',
-                      title: 'See categories',
-                      payload: 'Show categories',
-                    },
-                  ],
-                },
-                platform: 'FACEBOOK',
-              },
-            },
-          ],
-        };
+        // no cart for user
+        responseObject = emptyCartFallbackResponse();
         break;
       }
       productDetails = productDetails.map(item => {
@@ -329,6 +333,11 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
     }
     case SHOW_OLD_ORDER_INTENT: {
       const cart = await getPreviousOrderInfo(userId);
+      if (cart.length === 0) {
+        const customText = "Sorry,you don't have any history of order";
+        responseObject = emptyCartFallbackResponse(customText);
+        break;
+      }
       const transactionId = get(cart[0], 'id', '11111');
       let productDetails = get(cart[0], 'cart_info.product_details', []);
       productDetails = productDetails.map(item => {
@@ -394,8 +403,13 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       break;
     }
     case REPEAT_PREVIOUS_ORDER_INTENT: {
-      /* -----------------to place new order flow <<starts here>>--------------------- */
       const previousCartDetails = await getPreviousOrderInfo(userId);
+      if (previousCartDetails.length === 0) {
+        responseObject = emptyCartFallbackResponse(
+          `Sorry,you don't have any history of order`,
+        );
+        break;
+      }
       const currentCart = await selectCartInfoUsingSessionId(userId);
       const currentTransactionId = get(currentCart[0], 'id', '11111');
       console.log(
@@ -417,8 +431,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
         cartInfo: previousCartInfo,
       });
 
-      const min = 100000;
-      const id = (Math.random() * min + min).toFixed(0);
+      const id = createTransactionId();
       await createEmptyCart({
         userId,
         previousTransactionId: currentTransactionId,
@@ -426,22 +439,19 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       });
       responseObject = constructTextResponse(
         'Thank you for shopping with us. Your order has been placed successfully.' +
-          '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
+          '\n\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
       );
-      /* -----------------to place new order flow <<ends here>>--------------------- */
 
       break;
     }
     case PLACE_ORDER_INTENT: {
       const cart = await selectCartInfoUsingSessionId(userId);
-      const transactionId = get(cart[0], 'id', 11111);
-      const orderPlaced = await placeOrder(transactionId);
-      console.log('orderPlaced', orderPlaced);
-      const min = 100000;
-      const id = (Math.random() * min + min).toFixed(0);
+      const currentTransactionId = get(cart[0], 'id', 11111);
+      await placeOrder(currentTransactionId);
+      const id = createTransactionId();
       await createEmptyCart({
         userId,
-        previousTransactionId: transactionId,
+        previousTransactionId: currentTransactionId,
         newTransactionId: id,
       });
       // client.messages
