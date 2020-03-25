@@ -8,11 +8,12 @@ export const insertIntoTransactionInfo = ({
   sessionId,
   totalPrice,
   cartInfo,
+  previousOrderId = null,
 }) =>
   postgreSqlConnection.query(
-    `INSERT INTO transaction_info (id,session_id,total_price,cart_info,is_active) values('${id}','${sessionId}','${totalPrice}','${JSON.stringify(
+    `INSERT INTO transaction_info (id,session_id,total_price,cart_info,is_active,is_order_placed,previous_order_id) values('${id}','${sessionId}','${totalPrice}','${JSON.stringify(
       cartInfo,
-    )}',true)`,
+    )}',true,false,'${previousOrderId}')`,
   );
 export const updateCartInfoBySessionId = ({
   sessionId,
@@ -41,4 +42,18 @@ export const getProductsBySubCategories = ({ subCategoryName = '' }) =>
 export const getProductsByProductName = ({ productName }) =>
   postgreSqlConnection.query(
     `select * from products where name='${productName}'`,
+  );
+export const placeOrder = id =>
+  postgreSqlConnection.query(
+    `update transaction_info set is_order_placed=true,is_active=false where id='${id}'`,
+  );
+export const getPreviousOrderInfo = userId =>
+  postgreSqlConnection.query(
+    `select * from transaction_info where id=(select previous_order_id from transaction_info where is_active=true and session_id='${userId}');`,
+  );
+export const reorderQuery = ({ userId, cartInfo }) =>
+  postgreSqlConnection.query(
+    `update transaction_info set is_active=false,is_order_placed=true,cart_info='${JSON.stringify(
+      cartInfo,
+    )}' where id=(select id from transaction_info where is_active=true and session_id='${userId}');`,
   );

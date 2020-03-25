@@ -22,3 +22,6 @@ create TABLE transaction_info(id VARCHAR PRIMARY key,session_id VARCHAR,is_activ
 INSERT INTO transaction_info (id,session_id,total_price,cart_info,is_active) values('12345','2798396676905089','4234','{"cart_info":{"products":["dark chocolate","badam"]}}',true)
 
 /* -------------transaction_info ends here--------------------------- */
+
+/* -------------REORDER QUERY------------------------*/
+select * from transaction_info where id=(select previous_order_id from transaction_info where is_active=true and session_id='2691069327688536');

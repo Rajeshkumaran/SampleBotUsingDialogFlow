@@ -232,7 +232,6 @@ export const getAllCategories = async () => {
   console.log('session ---> ', sessionId);
 
   let categories = await getCategories();
-  console.log('categories ----> ', JSON.stringify(categories));
   const formattedCategories = categories.map(category => {
     return {
       title: category.name,
@@ -280,17 +279,11 @@ export const getAllProducts = async ({
   subCategoryName = '',
 }) => {
   let products = [];
-  console.log('inside getAllProducts', categoryName, subCategoryName);
   if (categoryName) {
-    console.log('inside getAllProducts -----> if', categoryName);
-
     products = await getProductsByCategories({ categoryName });
   } else if (subCategoryName) {
-    console.log('inside getAllProducts -----> else', subCategoryName);
-
     products = await getProductsBySubCategories({ subCategoryName });
   }
-  console.log('inside getAllProducts -----> products', products);
   const formattedProducts = products.map(product => {
     return {
       title: product.name,
@@ -305,160 +298,9 @@ export const getAllProducts = async ({
       ],
     };
   });
-  console.log(
-    'inside getAllProducts -----> formattedProducts',
-    formattedProducts,
-  );
-
   return formattedProducts;
 };
 
-// export const productsBasedOnCategory = category => {
-//   const products = {
-//     Chocolate: [
-//       {
-//         showCustomButtons: true,
-//         name: 'Dark chocolate',
-//         subtitle: 'Rs.200/kg',
-//         image_url:
-//           'https://www.lakechamplainchocolates.com/media/catalog/product/cache/05ca0152a64ac00c4063b513bbd4a7c7/d/a/dark-chocolate-caramels_7.jpg',
-//         buttons: [
-//           {
-//             type: 'postback',
-//             payload: 'Add Dark Chocolate to cart',
-//             title: 'Add to cart',
-//           },
-//           {
-//             type: 'postback',
-//             payload: 'Select Quantity for Dark Chocolate',
-//             title: 'Select Quantity',
-//           },
-//         ],
-//       },
-//       {
-//         showCustomButtons: true,
-//         name: 'White chocolate',
-//         subtitle: 'Rs.150/kg',
-//         image_url:
-//           'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTWHeUTG-v_iKg9xrC3tBem4x0V0BfIh69kxSxJFFyFV0pwmobO',
-//         buttons: [
-//           {
-//             type: 'postback',
-//             payload: 'Add White Chocolate to cart',
-//             title: 'Add to cart',
-//           },
-//           {
-//             type: 'postback',
-//             payload: 'Select Quantity for White Chocolate',
-//             title: 'Select Quantity',
-//           },
-//         ],
-//       },
-//     ],
-
-//     Nuts: [
-//       {
-//         showCustomButtons: true,
-//         name: 'Badam',
-//         subtitle: 'Rs.700/kg',
-//         image_url:
-//           'https://statics.sportskeeda.com/editor/2018/07/15e03-1531709674-800.jpg',
-//         buttons: [
-//           {
-//             type: 'postback',
-//             payload: 'Add Badam to cart',
-//             title: 'Add to cart',
-//           },
-//           {
-//             type: 'postback',
-//             payload: 'Select Quantity for Badam',
-//             title: 'Select Quantity',
-//           },
-//         ],
-//       },
-//       {
-//         showCustomButtons: true,
-//         name: 'Pista',
-//         subtitle: 'Rs.350/kg',
-//         image_url:
-//           'https://images-na.ssl-images-amazon.com/images/I/91h8Y4yEYOL._SL1500_.jpg',
-//         buttons: [
-//           {
-//             type: 'postback',
-//             payload: 'Add Pista to cart',
-//             title: 'Add to cart',
-//           },
-//           {
-//             type: 'postback',
-//             payload: 'Select Quantity for Pista',
-//             title: 'Select Quantity',
-//           },
-//         ],
-//       },
-//     ],
-
-//     Cooking: [
-//       {
-//         showCustomButtons: true,
-//         name: 'Aachi sambar powder',
-//         subtitle: 'Rs.20/piece',
-//         image_url:
-//           'https://5.imimg.com/data5/MK/WB/MY-13576389/aachi-sambar-powder-500x500.png',
-//         buttons: [
-//           {
-//             type: 'postback',
-//             payload: 'Add Aachi Sambar powder to cart',
-//             title: 'Add to cart',
-//           },
-//           {
-//             type: 'postback',
-//             payload: 'Select Quantity for Aachi Sambar powder',
-//             title: 'Select Quantity',
-//           },
-//         ],
-//       },
-//       {
-//         showCustomButtons: true,
-//         name: 'Maggie',
-//         subtitle: 'Rs.10/piece',
-//         image_url:
-//           'https://www.nestle.in/sites/g/files/pydnoa451/files/styles/brand_image/public/1_newmaggipackshot_inner2017_0.jpg?itok=sBN9ehVa',
-//         buttons: [
-//           {
-//             type: 'postback',
-//             payload: 'Add Maggie to cart',
-//             title: 'Add to cart',
-//           },
-//           {
-//             type: 'postback',
-//             payload: 'Select Quantity for Maggie',
-//             title: 'Select Quantity',
-//           },
-//         ],
-//       },
-//       {
-//         showCustomButtons: true,
-//         name: 'Tata Sala',
-//         subtitle: 'Rs.10/piece',
-//         image_url: 'https://mynewsfit.com/wp-content/uploads/2019/08/Salt.png',
-//         buttons: [
-//           {
-//             type: 'postback',
-//             payload: 'Add Tata salt to cart',
-//             title: 'Add to cart',
-//           },
-//           {
-//             type: 'postback',
-//             payload: 'Select Quantity for Tata salt',
-//             title: 'Select Quantity',
-//           },
-//         ],
-//       },
-//     ],
-//   };
-
-//   return constructCardResponse(products[category]);
-// };
 export const get = (from, selector, defaultVal) => {
   const value = selector
     .replace(/\[([^[\]]*)\]/g, '.$1.')
@@ -524,4 +366,21 @@ export const sendEmail = async () => {
       resolve(info.messageId);
     });
   }
+};
+export const createEmptyCart = async ({
+  userId,
+  previousTransactionId,
+  newTransactionId,
+}) => {
+  const transactionObject = {
+    sessionId: userId,
+    id: newTransactionId,
+    totalPrice: 0,
+    cartInfo: {
+      product_details: [],
+    },
+    previousOrderId: previousTransactionId,
+  };
+  const isCreated = await insertIntoTransactionInfo(transactionObject); // creating a new cart with previous order id
+  return true;
 };

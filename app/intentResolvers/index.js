@@ -11,6 +11,7 @@ import {
   getAllProducts,
   calculateTotalPrice,
   sendEmail,
+  createEmptyCart,
 } from '../utils/helpers';
 import {
   ADD_TO_CART_INTENT,
@@ -21,11 +22,16 @@ import {
   SHOW_SUB_CATEGORIES_INTENT,
   SEARCH_PRODUCT_INTENT,
   PLACE_ORDER_INTENT,
-  RE_ORDER_INTENT,
+  REPEAT_PREVIOUS_ORDER_INTENT,
+  SHOW_OLD_ORDER_INTENT,
 } from '../utils/constants';
 import {
   selectCartInfoUsingSessionId,
   getProductsByProductName,
+  placeOrder,
+  insertIntoTransactionInfo,
+  getPreviousOrderInfo,
+  reorderQuery,
 } from '../queries';
 
 const accountSid = 'AC7d29e187688e346f6c97295e1de38739';
@@ -58,8 +64,8 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
             },
             {
               type: 'postback',
-              payload: 'Old orders',
-              title: 'Old orders',
+              payload: 'Show previous order',
+              title: 'Show previous order',
             },
           ],
         },
@@ -243,7 +249,28 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       const transactionId = get(cart[0], 'id', 11111);
       let productDetails = get(cart[0], 'cart_info.product_details', []);
       console.log('cartInfo', userId, cart, productDetails);
-
+      if (cart.length === 0) {
+        responseObject = {
+          fulfillmentMessages: [
+            {
+              payload: {
+                facebook: {
+                  text: `Sorry,you don't have any cart`,
+                  quick_replies: [
+                    {
+                      content_type: 'text',
+                      title: 'See categories',
+                      payload: 'Show categories',
+                    },
+                  ],
+                },
+                platform: 'FACEBOOK',
+              },
+            },
+          ],
+        };
+        break;
+      }
       productDetails = productDetails.map(item => {
         const { product_name, image_url, price, quantity, measure_unit } = item;
         return {
@@ -300,12 +327,10 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
       };
       break;
     }
-    case RE_ORDER_INTENT: {
-      const cart = await selectCartInfoUsingSessionId(userId);
-      const transactionId = get(cart[0], 'id', 11111);
+    case SHOW_OLD_ORDER_INTENT: {
+      const cart = await getPreviousOrderInfo(userId);
+      const transactionId = get(cart[0], 'id', '11111');
       let productDetails = get(cart[0], 'cart_info.product_details', []);
-      console.log('cartInfo', userId, cart, productDetails);
-
       productDetails = productDetails.map(item => {
         const { product_name, image_url, price, quantity, measure_unit } = item;
         return {
@@ -317,10 +342,14 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
         };
       });
       const totalPrice = calculateTotalPrice(productDetails);
+      let orderPlacedOn = get(cart[0], 'updated_at', null);
+      orderPlacedOn = orderPlacedOn
+        ? new Date(orderPlacedOn).getTime() / 1000
+        : null;
+
       const userContext = await getUserDetails(request);
-      console.log('userContext ', userContext);
       const { first_name: firstName, last_name: lastName } = userContext;
-      // responseObject = constructCardResponse(productDetails);
+      responseObject = constructCardResponse(productDetails);
       const receiptTemplate = {
         type: 'template',
         payload: {
@@ -329,6 +358,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
           order_number: `${transactionId}`,
           currency: 'INR',
           payment_method: 'Not Paid yet',
+          ...(orderPlacedOn && { timestamp: orderPlacedOn }),
           summary: {
             total_cost: totalPrice.toFixed(2),
           },
@@ -345,12 +375,12 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
                 quick_replies: [
                   {
                     content_type: 'text',
-                    title: 'Place order',
-                    payload: 'Place order',
+                    title: 'Repeat this order',
+                    payload: `Repeat previous order`,
                   },
                   {
                     content_type: 'text',
-                    title: 'Add more products',
+                    title: 'Show categories',
                     payload: 'Show categories',
                   },
                 ],
@@ -360,24 +390,74 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
           },
         ],
       };
+
       break;
     }
-    case PLACE_ORDER_INTENT: {
-      console.log('client', client);
-      client.messages
-        .create({
-          body:
-            'New order received. Order No: 1, Customer name: Mr. Ganesh, Order amount: Rs.360, Delivery date: 24-03-2020',
-          from: '+17818053520',
-          to: '+91 80956 11119',
-        })
-        .then(message => console.log('sent!'));
+    case REPEAT_PREVIOUS_ORDER_INTENT: {
+      /* -----------------to place new order flow <<starts here>>--------------------- */
+      const previousCartDetails = await getPreviousOrderInfo(userId);
+      const currentCart = await selectCartInfoUsingSessionId(userId);
+      const currentTransactionId = get(currentCart[0], 'id', '11111');
+      console.log(
+        'currentTransactionId',
+        currentTransactionId,
+        currentCart,
+        previousCartDetails,
+      );
+
+      const previousCartInfo = {
+        product_details: get(
+          previousCartDetails[0],
+          'cart_info.product_details',
+          [],
+        ),
+      };
+      await reorderQuery({
+        userId,
+        cartInfo: previousCartInfo,
+      });
+
+      const min = 100000;
+      const id = (Math.random() * min + min).toFixed(0);
+      await createEmptyCart({
+        userId,
+        previousTransactionId: currentTransactionId,
+        newTransactionId: id,
+      });
       responseObject = constructTextResponse(
         'Thank you for shopping with us. Your order has been placed successfully.' +
           '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
       );
-      const message = await sendEmail();
-      console.log('message', message);
+      /* -----------------to place new order flow <<ends here>>--------------------- */
+
+      break;
+    }
+    case PLACE_ORDER_INTENT: {
+      const cart = await selectCartInfoUsingSessionId(userId);
+      const transactionId = get(cart[0], 'id', 11111);
+      const orderPlaced = await placeOrder(transactionId);
+      console.log('orderPlaced', orderPlaced);
+      const min = 100000;
+      const id = (Math.random() * min + min).toFixed(0);
+      await createEmptyCart({
+        userId,
+        previousTransactionId: transactionId,
+        newTransactionId: id,
+      });
+      // client.messages
+      //   .create({
+      //     body:
+      //       'New order received. Order No: 1, Customer name: Mr. Ganesh, Order amount: Rs.360, Delivery date: 24-03-2020',
+      //     from: '+17818053520',
+      //     to: '+91 80956 11119',
+      //   })
+      //   .then(message => console.log('sent!'));
+      responseObject = constructTextResponse(
+        'Thank you for shopping with us. Your order has been placed successfully.' +
+          '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
+      );
+      // const message = await sendEmail();
+      // console.log('message', message);
       break;
     }
     default: {
