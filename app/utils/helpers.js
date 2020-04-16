@@ -257,7 +257,7 @@ export const constructTextResponse = textResponse => {
   };
   return response;
 };
-export function constructCardResponse(cards) {
+export function constructCardResponse(cards, platform = 'FACEBOOK') {
   let newCards = [];
   cards.map(eachCard => {
     return newCards.push({
@@ -283,7 +283,7 @@ export function constructCardResponse(cards) {
             },
           },
         },
-        platform: 'FACEBOOK',
+        platform: platform,
       },
     ],
 

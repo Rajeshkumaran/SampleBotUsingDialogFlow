@@ -41,7 +41,12 @@ import {
 // const authToken = '35870cd3d8cdcf375c9ab8e9e5cc6f15';
 // const client = require('twilio')(accountSid, authToken);
 
-const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
+const resolveIntent = async ({
+  intentName = '',
+  parameters = {},
+  request,
+  platform = 'FACEBOOK',
+}) => {
   let responseObject = {};
   try {
     let userId = getUserIdFromRequest(request);
@@ -53,73 +58,123 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
         let salutation = userContext.gender === 'male' ? 'Mr. ' : 'Ms. ';
         const greetingMessage = `Hello ${salutation}${userContext.first_name}`;
         const cart = await selectCartInfoUsingSessionId(userId);
-
-        if (cart.length === 0) {
-          // new user don't have cart no need to previous order button
-          responseObject = constructCardResponse([
-            {
-              showCustomButtons: true,
-              title: 'Welcome to ABC supermarket',
-              image_url:
-                'https://lh3.googleusercontent.com/_0EOeOXx2WC-vkEwzhKHzhxeQjhgHIeHJKWljeUzAjos3QLfca8eWDCadZiBJ1mSY2hdx3lCaY8g6iUMDMQiz1b7T2ttpOkJSg=s750',
-              buttons: [
-                {
-                  type: 'postback',
-                  payload: 'View Categories',
-                  title: 'Show Categories',
-                },
-                {
-                  type: 'postback',
-                  payload: 'Show hot deals',
-                  title: 'Hot Deals',
-                },
-              ],
-            },
-          ]);
-        } else {
-          responseObject = constructCardResponse([
-            {
-              showCustomButtons: true,
-              title: 'Welcome to ABC supermarket',
-              image_url:
-                'https://lh3.googleusercontent.com/_0EOeOXx2WC-vkEwzhKHzhxeQjhgHIeHJKWljeUzAjos3QLfca8eWDCadZiBJ1mSY2hdx3lCaY8g6iUMDMQiz1b7T2ttpOkJSg=s750',
-              buttons: [
-                {
-                  type: 'postback',
-                  payload: 'View Categories',
-                  title: 'Show Categories',
-                },
-                {
-                  type: 'postback',
-                  payload: 'Show hot deals',
-                  title: 'HOT Deals',
-                },
-                {
-                  type: 'postback',
-                  payload: 'Show previous order',
-                  title: 'Show previous order',
-                },
-              ],
-            },
-          ]);
-        }
-
-        responseObject = {
-          fulfillmentMessages: [
-            {
+        if (platform === 'WEB') {
+          responseObject = {
+            fulfillmentMessages: [],
+            payload: {
               text: {
-                text: [greetingMessage],
+                text: ['Hello'],
               },
-              platform: 'FACEBOOK',
+              cards: [
+                {
+                  title: 'card item1',
+                  image_url: '',
+                  buttons: [
+                    {
+                      type: 'postback',
+                      payload: 'View Categories',
+                      title: 'Show Categories',
+                    },
+                    {
+                      type: 'postback',
+                      payload: 'Show hot deals',
+                      title: 'Hot Deals',
+                    },
+                  ],
+                },
+                {
+                  title: 'card item2',
+                  image_url: '',
+                  buttons: [
+                    {
+                      type: 'postback',
+                      payload: 'View Categories',
+                      title: 'Show Categories',
+                    },
+                    {
+                      type: 'postback',
+                      payload: 'Show hot deals',
+                      title: 'Hot Deals',
+                    },
+                  ],
+                },
+              ],
             },
-            ...responseObject.fulfillmentMessages,
-          ],
-        };
+          };
+        } else {
+          if (cart.length === 0) {
+            // new user don't have cart no need to previous order button
+            responseObject = constructCardResponse(
+              [
+                {
+                  showCustomButtons: true,
+                  title: 'Welcome to ABC supermarket',
+                  image_url:
+                    'https://lh3.googleusercontent.com/_0EOeOXx2WC-vkEwzhKHzhxeQjhgHIeHJKWljeUzAjos3QLfca8eWDCadZiBJ1mSY2hdx3lCaY8g6iUMDMQiz1b7T2ttpOkJSg=s750',
+                  buttons: [
+                    {
+                      type: 'postback',
+                      payload: 'View Categories',
+                      title: 'Show Categories',
+                    },
+                    {
+                      type: 'postback',
+                      payload: 'Show hot deals',
+                      title: 'Hot Deals',
+                    },
+                  ],
+                },
+              ],
+              platform,
+            );
+          } else {
+            responseObject = constructCardResponse(
+              [
+                {
+                  showCustomButtons: true,
+                  title: 'Welcome to ABC supermarket',
+                  image_url:
+                    'https://lh3.googleusercontent.com/_0EOeOXx2WC-vkEwzhKHzhxeQjhgHIeHJKWljeUzAjos3QLfca8eWDCadZiBJ1mSY2hdx3lCaY8g6iUMDMQiz1b7T2ttpOkJSg=s750',
+                  buttons: [
+                    {
+                      type: 'postback',
+                      payload: 'View Categories',
+                      title: 'Show Categories',
+                    },
+                    {
+                      type: 'postback',
+                      payload: 'Show hot deals',
+                      title: 'HOT Deals',
+                    },
+                    {
+                      type: 'postback',
+                      payload: 'Show previous order',
+                      title: 'Show previous order',
+                    },
+                  ],
+                },
+              ],
+              platform,
+            );
+          }
+
+          responseObject = {
+            fulfillmentMessages: [
+              {
+                text: {
+                  text: [greetingMessage],
+                },
+                platform,
+              },
+              ...responseObject.fulfillmentMessages,
+            ],
+          };
+        }
         break;
       }
       case SHOW_CATEGORIES_INTENT: {
         const categories = await getAllCategories();
-        responseObject = constructCardResponse(categories);
+        responseObject = constructCardResponse(categories, platform);
         responseObject = {
           fulfillmentMessages: [
             ...responseObject.fulfillmentMessages,
@@ -138,7 +193,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
         const subCategories = await getAllSubCategories({
           categoryName,
         });
-        responseObject = constructCardResponse(subCategories);
+        responseObject = constructCardResponse(subCategories, platform);
         break;
       }
       case SHOW_HOT_DEALS_INTENT: {
@@ -156,7 +211,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
             },
           ],
         }));
-        responseObject = constructCardResponse(productDetails);
+        responseObject = constructCardResponse(productDetails, platform);
         responseObject = {
           fulfillmentMessages: [
             {
@@ -181,7 +236,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
           categoryName,
           subCategoryName,
         });
-        responseObject = constructCardResponse(products);
+        responseObject = constructCardResponse(products, platform);
         break;
       }
       case SEARCH_PRODUCT_INTENT: {
@@ -193,7 +248,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
           image_url,
           subtitle: `Rs. ${price}`,
         }));
-        responseObject = constructCardResponse(productDetails);
+        responseObject = constructCardResponse(productDetails, platform);
         responseObject = {
           fulfillmentMessages: [
             {
@@ -320,7 +375,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
           responseObject = emptyCartFallbackResponse();
           break;
         }
-        productDetails = productDetails.map(item => {
+        productDetails = productDetails.map((item) => {
           const {
             product_name,
             image_url,
@@ -391,7 +446,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
         }
         const transactionId = get(cart[0], 'id', '11111');
         let productDetails = get(cart[0], 'cart_info.product_details', []);
-        productDetails = productDetails.map(item => {
+        productDetails = productDetails.map((item) => {
           const {
             product_name,
             image_url,
@@ -415,7 +470,7 @@ const resolveIntent = async ({ intentName = '', parameters = {}, request }) => {
 
         const userContext = await getUserDetails(request);
         const { first_name: firstName, last_name: lastName } = userContext;
-        responseObject = constructCardResponse(productDetails);
+        responseObject = constructCardResponse(productDetails, platform);
         const receiptTemplate = {
           type: 'template',
           payload: {
