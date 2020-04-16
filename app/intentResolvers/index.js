@@ -14,6 +14,7 @@ import {
   createEmptyCart,
   createTransactionId,
   emptyCartFallbackResponse,
+  removeFromCart,
 } from '../utils/helpers';
 import {
   ADD_TO_CART_INTENT,
@@ -35,6 +36,7 @@ import {
   getPreviousOrderInfo,
   reorderQuery,
   getHotDealsProducts,
+  getStockWithProductName,
 } from '../queries';
 
 // const accountSid = 'AC7d29e187688e346f6c97295e1de38739';
@@ -559,13 +561,89 @@ const resolveIntent = async ({
       case PLACE_ORDER_INTENT: {
         const cart = await selectCartInfoUsingSessionId(userId);
         const currentTransactionId = get(cart[0], 'id', 11111);
-        await placeOrder(currentTransactionId);
-        const id = createTransactionId();
-        await createEmptyCart({
-          userId,
-          previousTransactionId: currentTransactionId,
-          newTransactionId: id,
-        });
+        // check for products availability
+
+        const cartProducts = get(cart[0], 'cart_info.product_details', []);
+        console.log('cartInfo', cartProducts);
+        const stockProducts = await getStockWithProductName(cartProducts);
+        console.log('stockData', stockProducts);
+        let availableProducts = [];
+        let notAvailableProducts = [];
+        for (let item = 0, len = cartProducts.length; item < len; item += 1) {
+          if (cartProducts[item].quantity <= stockProducts[item].quantity) {
+            availableProducts.push(cartProducts[item]);
+          } else {
+            notAvailableProducts.push(cartProducts[item]);
+          }
+        }
+        if (notAvailableProducts.length > 0) {
+          await removeFromCart({
+            userId,
+            productsToBeRemoved: notAvailableProducts,
+          });
+          const formattedProducts = notAvailableProducts.map((product) => ({
+            title: product.product_name,
+            image_url: product.image_url,
+            subtitle: 'Out of stock',
+          }));
+          responseObject = constructCardResponse(formattedProducts, platform);
+          responseObject = {
+            fulfillmentMessages: [
+              {
+                text: {
+                  text: ['Sry,below products are out of stock'],
+                },
+              },
+              {
+                payload: {
+                  facebook: {
+                    attachment: get(
+                      responseObject,
+                      'fulfillmentMessages[0].payload.facebook.attachment',
+                      {},
+                    ),
+                    // text: {
+                    //   text: ['Some products are not available'],
+                    // },
+                    quick_replies: [
+                      {
+                        content_type: 'text',
+                        title: 'Make order without those',
+                        payload: `Place order`,
+                      },
+                      {
+                        content_type: 'text',
+                        title: 'View Cart',
+                        payload: 'Want to see Cart again',
+                      },
+                    ],
+                  },
+                  platform: 'FACEBOOK',
+                },
+              },
+            ],
+          };
+        } else {
+          console.log('availableProducts', availableProducts);
+          console.log('notAvailableProducts', notAvailableProducts);
+          await placeOrder(currentTransactionId);
+          const id = createTransactionId();
+          await createEmptyCart({
+            userId,
+            previousTransactionId: currentTransactionId,
+            newTransactionId: id,
+          });
+          // reduce the stock count
+          responseObject = constructTextResponse(
+            'Thank you for shopping with us. Your order has been placed successfully.' +
+              '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
+          );
+          responseObject = constructTextResponse(
+            'Thank you for shopping with us. Your order has been placed successfully.' +
+              '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
+          );
+        }
+
         // client.messages
         //   .create({
         //     body:
@@ -574,10 +652,7 @@ const resolveIntent = async ({
         //     to: '+91 80956 11119',
         //   })
         //   .then(message => console.log('sent!'));
-        responseObject = constructTextResponse(
-          'Thank you for shopping with us. Your order has been placed successfully.' +
-            '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
-        );
+
         // const message = await sendEmail();
         // console.log('message', message);
         break;

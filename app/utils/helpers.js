@@ -18,7 +18,7 @@ import {
   getProductsBySubCategories,
 } from '../queries';
 
-export const addOrUpdateUser = async userContext => {
+export const addOrUpdateUser = async (userContext) => {
   try {
     console.log('userId => ' + userContext.id);
     let result = await postgreSqlConnection.getById('users', userContext.id);
@@ -52,9 +52,9 @@ export const addOrUpdateUser = async userContext => {
     console.log(e);
   }
 };
-export const calculateTotalPrice = products => {
+export const calculateTotalPrice = (products) => {
   let totalPrice = 0;
-  products.map(product => (totalPrice += parseInt(product.price, 10)));
+  products.map((product) => (totalPrice += parseInt(product.price, 10)));
   return totalPrice;
 };
 const updateProductDetails = ({
@@ -68,7 +68,7 @@ const updateProductDetails = ({
     let isExist = productsInCart.includes(product_name);
     if (isExist) {
       // item is available in cart =>>>>> need to update item details like quantity, price ,etc ...
-      const index = productsInCart.findIndex(item => item === product_name);
+      const index = productsInCart.findIndex((item) => item === product_name);
       updatedProductDetails[index] = {
         ...oldProductDetails[index],
         quantity:
@@ -106,7 +106,7 @@ export const addToCart = async ({ userId = null, productsToBeAdded }) => {
       );
 
       const productsInCart = oldProductDetails.map(
-        product => product.product_name,
+        (product) => product.product_name,
       );
       const updatedCartInfo = updateProductDetails({
         productsInCart,
@@ -151,11 +151,70 @@ export const addToCart = async ({ userId = null, productsToBeAdded }) => {
     console.log('error inside add to cart helper', err);
   }
 };
+export const removeFromCart = async ({
+  userId = null,
+  productsToBeRemoved,
+}) => {
+  try {
+    console.log('started -> remove to cart helper', userId);
+    if (!userId) {
+      console.log('remove to cart helper -> userId is null');
+      return false;
+    }
+
+    // before adding to cart need to check already exiting cart or not
+    const userCartInfo = await selectCartInfoUsingSessionId(userId);
+    if (userCartInfo.length === 1) {
+      // if active cart already existing then update the existing cart with new Items
+      console.log(
+        'remove from cart helper -> remove cart existed',
+        userCartInfo,
+        productsToBeRemoved,
+      );
+
+      const oldProductDetails = get(
+        userCartInfo[0],
+        'cart_info.product_details',
+        [],
+      );
+
+      let updatedCartInfo = [];
+      for (let i = 0, len = oldProductDetails.length; i < len; i += 1) {
+        let isAvailableInStock = true;
+        for (let j = 0; j < productsToBeRemoved.length; j += 1) {
+          if (
+            oldProductDetails[i].product_name ===
+            productsToBeRemoved[j].product_name
+          ) {
+            isAvailableInStock = false;
+            break;
+          }
+        }
+        if (isAvailableInStock) {
+          updatedCartInfo.push(oldProductDetails[i]);
+        }
+      }
+
+      const totalPrice = calculateTotalPrice(updatedCartInfo);
+      const response = await updateCartInfoBySessionId({
+        sessionId: userId,
+        totalPrice,
+        cartInfo: {
+          product_details: updatedCartInfo,
+        },
+      });
+      console.log('response from remove from cart updation', response);
+    }
+    return true;
+  } catch (err) {
+    console.log('error inside remove from cart helper', err);
+  }
+};
 export const getAllCategories = async () => {
   console.log('session ---> ', sessionId);
 
   let categories = await getCategories();
-  const formattedCategories = categories.map(category => {
+  const formattedCategories = categories.map((category) => {
     return {
       title: category.name,
       image_url: category.image_url,
@@ -181,7 +240,7 @@ export const getAllSubCategories = async ({ categoryName = '' }) => {
 
   let subCategories = await getSubCategoriesByCategories({ categoryName });
   console.log('categories ----> ', JSON.stringify(subCategories));
-  const formattedSubCategories = subCategories.map(subCategory => {
+  const formattedSubCategories = subCategories.map((subCategory) => {
     return {
       title: subCategory.name,
       image_url: subCategory.image_url,
@@ -207,7 +266,7 @@ export const getAllProducts = async ({
   } else if (subCategoryName) {
     products = await getProductsBySubCategories({ subCategoryName });
   }
-  const formattedProducts = products.map(product => {
+  const formattedProducts = products.map((product) => {
     return {
       title: product.name,
       image_url: product.image_url,
@@ -223,7 +282,7 @@ export const getAllProducts = async ({
   });
   return formattedProducts;
 };
-export const constructTextResponse = textResponse => {
+export const constructTextResponse = (textResponse) => {
   const response = {
     fulfillmentText: 'displayed&spoken response',
     fulfillmentMessages: [
@@ -259,7 +318,7 @@ export const constructTextResponse = textResponse => {
 };
 export function constructCardResponse(cards, platform = 'FACEBOOK') {
   let newCards = [];
-  cards.map(eachCard => {
+  cards.map((eachCard) => {
     return newCards.push({
       ...(eachCard.image_url && { image_url: eachCard.image_url }),
       ...(eachCard.title && { title: eachCard.title }),
@@ -303,12 +362,12 @@ export const get = (from, selector, defaultVal) => {
   const value = selector
     .replace(/\[([^[\]]*)\]/g, '.$1.')
     .split('.')
-    .filter(t => t !== '')
+    .filter((t) => t !== '')
     .reduce((prev, cur) => prev && prev[cur], from);
   return value === undefined || value === null ? defaultVal : value;
 };
 
-export const getUserDetails = async req => {
+export const getUserDetails = async (req) => {
   let userContext = {};
   let senderInfo = get(req, 'body.originalDetectIntentRequest', '');
   console.log('senderinfo ==> ' + senderInfo);
@@ -332,7 +391,7 @@ export const getUserDetails = async req => {
     return userContext;
   }
 };
-export const getUserIdFromRequest = req => {
+export const getUserIdFromRequest = (req) => {
   let senderInfo = get(req, 'body.originalDetectIntentRequest', '');
   let senderId = null;
   if (senderInfo) {
@@ -360,7 +419,7 @@ export const sendEmail = async () => {
     });
 
     console.log('Email sent successfully');
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       resolve(info.messageId);
     });
   }

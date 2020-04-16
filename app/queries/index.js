@@ -1,5 +1,5 @@
 import { postgreSqlConnection } from '../connectors/config';
-export const selectCartInfoUsingSessionId = sessionId =>
+export const selectCartInfoUsingSessionId = (sessionId) =>
   postgreSqlConnection.query(
     `select cart_info,id from transaction_info where session_id='${sessionId}' and is_active=true`,
   );
@@ -43,11 +43,11 @@ export const getProductsByProductName = ({ productName }) =>
   postgreSqlConnection.query(
     `select * from products where name='${productName}'`,
   );
-export const placeOrder = id =>
+export const placeOrder = (id) =>
   postgreSqlConnection.query(
     `update transaction_info set is_order_placed=true,is_active=false where id='${id}'`,
   );
-export const getPreviousOrderInfo = userId =>
+export const getPreviousOrderInfo = (userId) =>
   postgreSqlConnection.query(
     `select * from transaction_info where id=(select previous_order_id from transaction_info where is_active=true and session_id='${userId}');`,
   );
@@ -59,3 +59,16 @@ export const reorderQuery = ({ userId, cartInfo }) =>
   );
 export const getHotDealsProducts = () =>
   postgreSqlConnection.query(`select * from products where is_hot_deal='true'`);
+
+export const getStockWithProductName = (products = []) => {
+  if (products.length <= 0) return Promise.resolve(true);
+  const query = `select name,stock_count as quantity  from products where `;
+  let whereClause = ``;
+  products.map((product, index) => {
+    whereClause += `name = '${product.product_name}'`;
+    whereClause += index !== products.length - 1 ? ' or ' : ';';
+  });
+  const finalQuery = `${query}${whereClause}`;
+  console.log('finalQuery', finalQuery);
+  return postgreSqlConnection.query(`${finalQuery}`);
+};
