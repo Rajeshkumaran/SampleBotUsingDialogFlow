@@ -18,6 +18,7 @@ app.post('/fulfillmentResolver', async (req, res) => {
   console.log('url ', req.url, req.body);
   let responseObject = {};
   const queryResult = req.body.queryResult;
+  const queryText = req.body.queryResult.queryText;
   const intentName = queryResult.intent.displayName;
   sessionId = req.body.session;
   const { parameters } = queryResult;
@@ -31,6 +32,7 @@ app.post('/fulfillmentResolver', async (req, res) => {
     intentName,
     parameters,
     request: req,
+    queryText,
     platform: requestSource || 'FACEBOOK',
   });
   const endTime = new Date().getTime();
@@ -54,6 +56,6 @@ process
   .on('unhandledRejection', (reason, p) => {
     console.error(reason, 'Unhandled Rejection at Promise', p);
   })
-  .on('uncaughtException', err => {
+  .on('uncaughtException', (err) => {
     console.error(err, 'Uncaught Exception thrown');
   });

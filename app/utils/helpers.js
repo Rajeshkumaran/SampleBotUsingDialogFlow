@@ -414,8 +414,8 @@ export const sendEmail = async () => {
     let info = await transporter.sendMail({
       from: 'SupermarketBot', // sender address
       to: `${receivers}`, // list of receivers
-      subject: 'Hello', // Subject line
-      text: 'Hello from supermarket bot', // plain text body
+      subject: 'Order info from ABC supermarket', // Subject line
+      text: 'Order has been placed successfully', // plain text body
     });
 
     console.log('Email sent successfully');

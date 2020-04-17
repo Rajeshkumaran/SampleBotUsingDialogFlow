@@ -15,6 +15,7 @@ import {
   createTransactionId,
   emptyCartFallbackResponse,
   removeFromCart,
+  sendEmail,
 } from '../utils/helpers';
 import {
   ADD_TO_CART_INTENT,
@@ -47,6 +48,7 @@ const resolveIntent = async ({
   intentName = '',
   parameters = {},
   request,
+  queryText,
   platform = 'FACEBOOK',
 }) => {
   let responseObject = {};
@@ -372,7 +374,8 @@ const resolveIntent = async ({
         const cart = await selectCartInfoUsingSessionId(userId);
         const transactionId = get(cart[0], 'id', 11111);
         let productDetails = get(cart[0], 'cart_info.product_details', []);
-        if (cart.length === 0) {
+        console.log('inside view cart', cart);
+        if (productDetails.length === 0) {
           // no cart for user
           responseObject = emptyCartFallbackResponse();
           break;
@@ -570,17 +573,38 @@ const resolveIntent = async ({
         let availableProducts = [];
         let notAvailableProducts = [];
         for (let item = 0, len = cartProducts.length; item < len; item += 1) {
-          if (cartProducts[item].quantity <= stockProducts[item].quantity) {
-            availableProducts.push(cartProducts[item]);
-          } else {
-            notAvailableProducts.push(cartProducts[item]);
+          for (let j = 0; j < stockProducts.length; j += 1) {
+            if (cartProducts[item].product_name === stockProducts[j].name) {
+              console.log(
+                'cartProducts[item]',
+                cartProducts[item],
+                '---stockProducts[j]',
+                stockProducts[j],
+                item,
+                j,
+              );
+              if (cartProducts[item].quantity <= stockProducts[j].quantity) {
+                availableProducts.push(cartProducts[item]);
+              } else {
+                notAvailableProducts.push(cartProducts[item]);
+              }
+            }
           }
         }
-        if (notAvailableProducts.length > 0) {
+        console.log('availableProducts', availableProducts);
+        console.log('notAvailableProducts', notAvailableProducts);
+        console.log('queryText', queryText === 'Yes , Place order');
+        let isPlaceOrder = false;
+        if (queryText === 'Yes , Place order') {
+          isPlaceOrder = true;
+        } else if (queryText === 'No , remove and place order') {
           await removeFromCart({
             userId,
             productsToBeRemoved: notAvailableProducts,
           });
+          isPlaceOrder = true;
+        }
+        if (notAvailableProducts.length > 0 && !isPlaceOrder) {
           const formattedProducts = notAvailableProducts.map((product) => ({
             title: product.product_name,
             image_url: product.image_url,
@@ -591,7 +615,10 @@ const resolveIntent = async ({
             fulfillmentMessages: [
               {
                 text: {
-                  text: ['Sry,below products are out of stock'],
+                  text: [
+                    'Sry,below products are out of stock',
+                    'Placing order with out of stock products may take longer time to deliver',
+                  ],
                 },
               },
               {
@@ -608,13 +635,13 @@ const resolveIntent = async ({
                     quick_replies: [
                       {
                         content_type: 'text',
-                        title: 'Make order without those',
-                        payload: `Place order`,
+                        title: 'Its ok,place order',
+                        payload: `Yes , Place order`,
                       },
                       {
                         content_type: 'text',
-                        title: 'View Cart',
-                        payload: 'Want to see Cart again',
+                        title: 'No,place order without those products',
+                        payload: 'No , remove and place order',
                       },
                     ],
                   },
@@ -633,17 +660,19 @@ const resolveIntent = async ({
             previousTransactionId: currentTransactionId,
             newTransactionId: id,
           });
+
           // reduce the stock count
           responseObject = constructTextResponse(
             'Thank you for shopping with us. Your order has been placed successfully.' +
               '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
           );
-          responseObject = constructTextResponse(
-            'Thank you for shopping with us. Your order has been placed successfully.' +
-              '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
-          );
-        }
+          // await sendEmail();
 
+          // responseObject = constructTextResponse(
+          //   'Thank you for shopping with us. Your order has been placed successfully.' +
+          //     '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
+          // );
+        }
         // client.messages
         //   .create({
         //     body:
