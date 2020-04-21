@@ -399,7 +399,10 @@ export const getUserIdFromRequest = (req) => {
   }
   return senderId;
 };
-export const sendEmail = async () => {
+export const sendEmail = async ({
+  subject = 'New order placed',
+  text = 'A new Order has been created ',
+} = {}) => {
   const { username = null, password = null } = GMAIL_SENDER_CREDENTIALS;
   const receivers = GMAIL_RECIEVERS_LIST.join(',');
   if (username && password) {
@@ -414,8 +417,8 @@ export const sendEmail = async () => {
     let info = await transporter.sendMail({
       from: 'SupermarketBot', // sender address
       to: `${receivers}`, // list of receivers
-      subject: 'Order info from ABC supermarket', // Subject line
-      text: 'Order has been placed successfully', // plain text body
+      ...(subject && { subject }), // Subject line
+      ...(text && { text }), // plain text body
     });
 
     console.log('Email sent successfully');

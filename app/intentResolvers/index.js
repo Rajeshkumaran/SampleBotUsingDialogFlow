@@ -666,7 +666,7 @@ const resolveIntent = async ({
             'Thank you for shopping with us. Your order has been placed successfully.' +
               '\nIt will be delivered at your doorstep by the end of the day. Hoping to see you again.',
           );
-          // await sendEmail();
+          sendEmail();
 
           // responseObject = constructTextResponse(
           //   'Thank you for shopping with us. Your order has been placed successfully.' +
