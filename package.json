@@ -30,7 +30,7 @@
 		"dialogflow": "^1.2.0",
 		"dialogflow-fulfillment": "^0.6.1",
 		"elasticsearch": "^13.3.1",
-		"express": "^4.16.2",
+		"express": "^4.17.3",
 		"mongodb": "^3.3.3",
 		"ngrok": "^3.2.7",
 		"nodemailer": "^6.4.6",
